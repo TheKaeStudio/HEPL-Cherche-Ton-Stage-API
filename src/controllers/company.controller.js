@@ -1,7 +1,7 @@
 import companyModel from "../models/company.model.js";
 import Company from "../models/company.model.js";
 
-export const getAllCompanies = async (req, res, next) => {
+export const getCompanies = async (req, res, next) => {
     let companies;
 
     try {
@@ -11,7 +11,7 @@ export const getAllCompanies = async (req, res, next) => {
     }
 
     if (!companies) {
-        return res.status(404).json({ message: "No companies found!" });
+        return res.status(404).json({ message: "Aucune entreprise trouvée!" });
     }
 
     return res.status(200).json({ companies });
@@ -29,7 +29,7 @@ export const getCompanyById = async (req, res, next) => {
     }
 
     if (!company) {
-        return res.status(404).json({ message: "This company doesn't exist!" });
+        return res.status(404).json({ message: "Cet entreprise n'existe pas..." });
     }
 
     return res.status(200).json({ company });
@@ -49,7 +49,7 @@ export const createCompany = async (req, res, next) => {
     if (existingCompany) {
         return res
             .status(400)
-            .json({ message: "Company Identifier already exists!" });
+            .json({ message: "Cet identifiant d'entreprise existe déjà!" });
     }
 
     const company = new Company({
@@ -81,14 +81,14 @@ export const updateCompany = async (req, res, next) => {
                 name,
                 description,
             },
-            { new: true },
+            { returnDocument: "after", runValidators: true },
         );
     } catch (err) {
         return console.log(err);
     }
 
     if (!company) {
-        return res.status(500).json({ message: "Unable to Update" });
+        return res.status(500).json({ message: "Impossible de modifier la fiche d'entreprise..." });
     }
 
     return res.status(200).json({ company });
@@ -106,8 +106,8 @@ export const deleteCompany = async (req, res, next) => {
     }
 
     if (!company) {
-        return res.status(400).json({ message: "Unable to delete" });
+        return res.status(400).json({ message: "Suppression impossible" });
     }
 
-    return res.status(200).json({ message: "Successfully deleted" });
+    return res.status(200).json({ message: "Supprimé avec succès" });
 };

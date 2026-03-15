@@ -1,10 +1,12 @@
 import express from "express";
-import { getAllUsers, signup, login } from "../controllers/user.controller.js";
+import { getUsers, getUser } from "../controllers/user.controller.js";
+import { authenticate } from "../middlewares/auth.middleware.js";
+import p from "../../config/permissions.js";
+import { authorize } from "../middlewares/permission.middleware.js";
 
 const userRouter = express.Router();
 
-userRouter.get("/", getAllUsers);
-userRouter.post("/signup", signup)
-userRouter.post("/login", login)
+userRouter.get("/", authenticate, authorize(p.USER_READ), getUsers);
+userRouter.get("/:id", authenticate, authorize(p.USER_READ), getUser);
 
 export default userRouter;
