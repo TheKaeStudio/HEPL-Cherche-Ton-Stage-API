@@ -1,7 +1,7 @@
 import p from "./permissions.js";
 
 export const rolePermissions = {
-    student: [p.INTERNSHIP_UPDATE],
+    student: [],
 
     teacher: [
         p.INTERNSHIP_CREATE,
