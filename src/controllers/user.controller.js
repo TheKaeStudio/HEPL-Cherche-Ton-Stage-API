@@ -1,5 +1,4 @@
 import User from "../models/user.model.js";
-import bcrypt from "bcryptjs";
 
 export const getUsers = async (req, res, next) => {
     try {
@@ -13,7 +12,7 @@ export const getUsers = async (req, res, next) => {
 
 export const getUser = async (req, res, next) => {
     try {
-        const user = await User.findById(req.params.id).select("-password");
+        const user = await User.findById(req.params.id);
 
         if (!user) {
             const error = new Error("User not found");
@@ -22,6 +21,36 @@ export const getUser = async (req, res, next) => {
         }
 
         res.status(200).json({ success: true, data: users });
+    } catch (err) {
+        next(err);
+    }
+};
+
+export const deleteUser = async (req, res, next) => {
+    try {
+        const userId = req.params.id;
+
+        const user = await User.findById(userId);
+        if (!user) {
+            const err = new Error("Utilisateur introuvable");
+            err.statusCode = 404;
+            throw err;
+        }
+        console.log(user.firstname);
+
+        const firstname = user.firstname || "";
+        const lastname = user.lastname || "";
+        
+        await User.findByIdAndDelete(userId);
+
+        res.status(200).json({
+            success: true,
+            message: `Utilisateur ${firstname} ${lastname} supprimé avec succès`,
+        });
+
+        console.log(
+            `Utilisateur ${firstname} ${lastname} supprimé avec succès`,
+        );
     } catch (err) {
         next(err);
     }

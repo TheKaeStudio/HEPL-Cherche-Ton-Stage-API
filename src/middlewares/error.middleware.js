@@ -1,39 +1,34 @@
 const errorMiddleware = (err, req, res, next) => {
-    try {
-        let error = { ...err };
+    console.error(err);
 
-        error.message = err.message;
+    let statusCode = err.statusCode || 500;
+    let message = err.message || "Erreur serveur";
 
-        console.error(err);
-
-        // Mongoose bad ObjectId
-        if (err.name == "CastError") {
-            const message = "Resource not found";
-            error = new Error(message);
-            error.statusCode(404);
-        }
-
-        // Mongoose duplicate key
-        if (err.code == 11000) {
-            const message = "Duplicate field value entered";
-            error = new Error(message);
-            error.statusCode(400);
-        }
-
-        // Mongoose validation error
-        if (err.name == "ValidationError") {
-            const message = Object.values(err.errors).map((val) => val.message);
-            error = new Error(message.join(", "));
-            error.statusCode(400);
-        }
-
-        res.status(error.statusCode || 500).json({
-            success: false,
-            error: error.message || "Server Error",
-        });
-    } catch (error) {
-        next(error);
+    // Mongoose bad ObjectId
+    if (err.name === "CastError") {
+        statusCode = 404;
+        message = "Ressource introuvable";
     }
+
+    // Mongoose duplicate key
+    if (err.code === 11000) {
+        const field = Object.keys(err.keyValue);
+        statusCode = 400;
+        message = `Un utilisateur avec ce ${field} existe déjà`;
+    }
+
+    // Mongoose validation error
+    if (err.name === "ValidationError") {
+        statusCode = 400;
+        message = Object.values(err.errors)
+            .map((val) => val.message)
+            .join(", ");
+    }
+
+    res.status(statusCode).json({
+        success: false,
+        error: message,
+    });
 };
 
 export default errorMiddleware;
