@@ -17,6 +17,11 @@ const companySchema = new Schema(
             type: String,
             required: true,
         },
+        invite: {
+            key: String,
+            createdAt: Date,
+            used: { type: Boolean, default: false },
+        },
     },
     { timestamps: true },
 );

@@ -2,8 +2,10 @@ import express from "express";
 import {
     createCompany,
     deleteCompany,
+    getAccessToCompany,
     getCompanies,
     getCompanyById,
+    giveAccessToCompany,
     updateCompany,
 } from "../controllers/company.controller.js";
 import { authenticate } from "../middlewares/auth.middleware.js";
@@ -28,5 +30,14 @@ companyRouter.delete(
     authorize(p.COMPANY_DELETE),
     deleteCompany,
 );
+
+companyRouter.post(
+    "/:id/give-access",
+    authenticate,
+    authorize(p.COMPANY_GIVE_ACCESS),
+    giveAccessToCompany,
+);
+
+companyRouter.get("/get-access/:key", getAccessToCompany);
 
 export default companyRouter;

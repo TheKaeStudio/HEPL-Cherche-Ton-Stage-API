@@ -14,6 +14,7 @@ export const rolePermissions = {
         p.COMPANY_CREATE,
         p.COMPANY_UPDATE,
         p.COMPANY_DELETE,
+        p.COMPANY_GIVE_ACCESS,
         p.INTERNSHIP_CREATE,
         p.INTERNSHIP_UPDATE,
         p.INTERNSHIP_DELETE,

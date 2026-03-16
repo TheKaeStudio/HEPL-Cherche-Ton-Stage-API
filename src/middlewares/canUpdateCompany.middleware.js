@@ -4,7 +4,7 @@ import p from "../../config/permissions.js";
 import User from "../models/user.model.js";
 
 export const canUpdateCompany = async (req, res, next) => {
-    const companyId = req.params.companyId;
+    const companyId = req.params.id;
 
     // Vérifier si l'utilisateur a la permission
     if (
@@ -33,17 +33,17 @@ export const canUpdateCompany = async (req, res, next) => {
     }
 
     // Si pas de permission, vérifier token JWT limited
-    const token = req.query.token;
+    const token = req.headers.authorization.split(" ")[1];
 
     if (!token) {
-        return res.status(403).json({ message: "Accès réfusé" });
+        return res.status(403).json({ message: "Accès réfusé2" });
     }
 
     try {
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
         if (
-            decoded.type === "company-edit" &&
+            decoded.role === "limited" &&
             decoded.companyId === companyId
         ) {
             return next();
