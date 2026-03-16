@@ -20,7 +20,7 @@ export const getUser = async (req, res, next) => {
             throw error;
         }
 
-        res.status(200).json({ success: true, data: users });
+        res.status(200).json({ success: true, data: user });
     } catch (err) {
         next(err);
     }
@@ -36,7 +36,6 @@ export const deleteUser = async (req, res, next) => {
             err.statusCode = 404;
             throw err;
         }
-        console.log(user.firstname);
 
         const firstname = user.firstname || "";
         const lastname = user.lastname || "";
