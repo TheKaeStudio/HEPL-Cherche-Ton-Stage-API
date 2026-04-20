@@ -13,7 +13,7 @@ export const authenticate = async (req, res, next) => {
         }
 
         if (!token) {
-            return res.status(401).json({ message: "Accès refusé" });
+            return res.status(401).json({ success: false, error: "Accès refusé" });
         }
 
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
@@ -21,17 +21,17 @@ export const authenticate = async (req, res, next) => {
         const user = await User.findById(decoded.userId);
 
         if (!user) {
-            return res.status(401).json({ message: "Accès refusé" });
+            return res.status(401).json({ success: false, error: "Accès refusé" });
+        }
+
+        if (!user.verified) {
+            return res.status(403).json({ success: false, code: "EMAIL_NOT_VERIFIED", error: "Tu dois confirmer ton adresse email avant d'accéder à cette ressource." });
         }
 
         req.user = user;
 
         next();
     } catch (err) {
-        console.log(err);
-        return res.status(401).json({
-            message: "Accès refusé",
-            error: err.message,
-        });
+        return res.status(401).json({ success: false, error: "Token invalide ou expiré" });
     }
 };

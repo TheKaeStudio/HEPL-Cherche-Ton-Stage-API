@@ -1,56 +1,100 @@
-import User from "../models/user.model.js";
+import userRepo from "../repositories/user.repository.js";
+import dbLog from "../utils/dbLogger.js";
 
 export const getUsers = async (req, res, next) => {
     try {
-        const users = await User.find().select("-password");
-
-        res.status(200).json({ success: true, data: users });
+        const users = await userRepo.findAll();
+        return res.status(200).json({ success: true, users });
     } catch (err) {
-        next(err);
+        return next(err);
     }
 };
 
 export const getUser = async (req, res, next) => {
     try {
-        const user = await User.findById(req.params.id);
+        const user = await userRepo.findById(req.params.id);
 
-        if (!user) {
-            const error = new Error("User not found");
-            error.statusCode = 404;
-            throw error;
-        }
-
-        res.status(200).json({ success: true, data: user });
-    } catch (err) {
-        next(err);
-    }
-};
-
-export const deleteUser = async (req, res, next) => {
-    try {
-        const userId = req.params.id;
-
-        const user = await User.findById(userId);
         if (!user) {
             const err = new Error("Utilisateur introuvable");
             err.statusCode = 404;
             throw err;
         }
 
-        const firstname = user.firstname || "";
-        const lastname = user.lastname || "";
-        
-        await User.findByIdAndDelete(userId);
-
-        res.status(200).json({
-            success: true,
-            message: `Utilisateur ${firstname} ${lastname} supprimé avec succès`,
-        });
-
-        console.log(
-            `Utilisateur ${firstname} ${lastname} supprimé avec succès`,
-        );
+        return res.status(200).json({ success: true, user });
     } catch (err) {
-        next(err);
+        return next(err);
+    }
+};
+
+export const updateUser = async (req, res, next) => {
+    const { role, promotion } = req.body;
+    const requesterId = req.user._id;
+    const requesterRole = req.user.role;
+
+    if (role && requesterRole !== "admin") {
+        return res.status(403).json({ success: false, error: "Seul un admin peut modifier le rôle d'un utilisateur" });
+    }
+
+    const updates = {};
+    if (role !== undefined) updates.role = role;
+    if (promotion !== undefined) updates.promotion = promotion;
+
+    try {
+        const user = await userRepo.updateById(req.params.id, updates);
+
+        if (!user) {
+            const err = new Error("Utilisateur introuvable");
+            err.statusCode = 404;
+            throw err;
+        }
+
+        dbLog({ action: "USER_UPDATED", message: `Utilisateur modifié: ${user.email}`, userId: requesterId, ip: req.ip, meta: { targetUserId: req.params.id, updates } });
+
+        return res.status(200).json({ success: true, user });
+    } catch (err) {
+        return next(err);
+    }
+};
+
+export const updateMe = async (req, res, next) => {
+    const ALLOWED = ["photo", "phone", "firstname", "lastname"];
+    const updates = {};
+    for (const key of ALLOWED) {
+        if (req.body[key] !== undefined) updates[key] = req.body[key];
+    }
+
+    try {
+        const user = await userRepo.updateById(req.user._id, updates);
+        return res.status(200).json({ success: true, user });
+    } catch (err) {
+        return next(err);
+    }
+};
+
+export const getGroups = async (req, res, next) => {
+    try {
+        const groups = await userRepo.findDistinctPromotions();
+        return res.status(200).json({ success: true, groups });
+    } catch (err) {
+        return next(err);
+    }
+};
+
+export const deleteUser = async (req, res, next) => {
+    try {
+        const user = await userRepo.findById(req.params.id);
+        if (!user) {
+            const err = new Error("Utilisateur introuvable");
+            err.statusCode = 404;
+            throw err;
+        }
+
+        await userRepo.deleteById(req.params.id);
+
+        dbLog({ level: "warn", action: "USER_DELETED", message: `Utilisateur supprimé: ${user.firstname} ${user.lastname} (${user.email})`, userId: req.user._id, ip: req.ip, meta: { deletedUserId: user._id, email: user.email, role: user.role } });
+
+        return res.status(200).json({ success: true, message: `Utilisateur ${user.firstname} ${user.lastname} supprimé avec succès` });
+    } catch (err) {
+        return next(err);
     }
 };

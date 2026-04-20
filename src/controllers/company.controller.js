@@ -1,169 +1,124 @@
 import crypto from "crypto";
-import jwt from "jsonwebtoken"
-import Company from "../models/company.model.js";
+import jwt from "jsonwebtoken";
+import companyRepo from "../repositories/company.repository.js";
+import userRepo from "../repositories/user.repository.js";
+import { createNotification } from "../utils/createNotification.js";
+import dbLog from "../utils/dbLogger.js";
 
 export const getCompanies = async (req, res, next) => {
-    let companies;
-
     try {
-        companies = await Company.find();
+        const companies = await companyRepo.findAll();
+        return res.status(200).json({ success: true, companies });
     } catch (err) {
-        return console.log(err);
+        return next(err);
     }
-
-    if (!companies) {
-        return res.status(404).json({ message: "Aucune entreprise trouvée!" });
-    }
-
-    return res.status(200).json({ companies });
 };
 
 export const getCompanyById = async (req, res, next) => {
-    const companyId = req.params.id;
-
-    let company;
-
     try {
-        company = await Company.findOne({ id: companyId });
+        const company = await companyRepo.findById(req.params.id);
+        if (!company) {
+            return res.status(404).json({ success: false, error: "Cette entreprise n'existe pas..." });
+        }
+        return res.status(200).json({ success: true, company });
     } catch (err) {
-        return console.log(err);
+        return next(err);
     }
-
-    if (!company) {
-        return res
-            .status(404)
-            .json({ message: "Cet entreprise n'existe pas..." });
-    }
-
-    return res.status(200).json({ company });
 };
 
 export const createCompany = async (req, res, next) => {
-    const { id, name, description } = req.body;
-
-    let existingCompany;
+    const { name, description, logo, sector, size, offresObservation, offres3e, address, website, phone, contactPerson } = req.body;
 
     try {
-        existingCompany = await Company.findOne({ id });
+        const company = await companyRepo.create({ name, description, logo, sector, size, offresObservation, offres3e, address, website, phone, contactPerson });
+
+        const users = await userRepo.findVerifiedIds();
+        for (const user of users) {
+            createNotification(user._id, "new_company", "Company", company._id);
+        }
+
+        dbLog({ action: "COMPANY_CREATED", message: `Entreprise créée: ${name}`, userId: req.user._id, ip: req.ip, meta: { companyId: company._id, name } });
+
+        return res.status(201).json({ success: true, company });
     } catch (err) {
-        return console.log(err);
+        return next(err);
     }
-
-    if (existingCompany) {
-        return res
-            .status(400)
-            .json({ message: "Cet identifiant d'entreprise existe déjà!" });
-    }
-
-    const company = new Company({
-        id,
-        name,
-        description,
-    });
-
-    try {
-        await company.save();
-    } catch (err) {
-        return console.log(err);
-    }
-
-    return res.status(201).json({ company });
 };
 
 export const updateCompany = async (req, res, next) => {
-    const { name, description } = req.body;
-
-    const companyId = req.params.id;
-
-    let company;
+    const { name, description, logo, sector, size, offresObservation, offres3e, address, website, phone, contactPerson } = req.body;
 
     try {
-        company = await Company.findOneAndUpdate(
-            { id: companyId },
-            {
-                name,
-                description,
-            },
-            { returnDocument: "after", runValidators: true },
-        );
+        const company = await companyRepo.updateById(req.params.id, { name, description, logo, sector, size, offresObservation, offres3e, address, website, phone, contactPerson });
+
+        if (!company) {
+            return res.status(404).json({ success: false, error: "Impossible de modifier la fiche d'entreprise..." });
+        }
+
+        dbLog({ action: "COMPANY_UPDATED", message: `Entreprise modifiée: ${req.params.id}`, userId: req.user?._id ?? null, ip: req.ip, meta: { companyId: req.params.id } });
+
+        return res.status(200).json({ success: true, company });
     } catch (err) {
-        return console.log(err);
+        return next(err);
     }
-
-    if (!company) {
-        return res
-            .status(500)
-            .json({
-                message: "Impossible de modifier la fiche d'entreprise...",
-            });
-    }
-
-    return res.status(200).json({ company });
 };
 
 export const deleteCompany = async (req, res, next) => {
-    const companyId = req.params.id;
-
-    let company;
-
     try {
-        company = await Company.findOneAndDelete({ id: companyId });
+        const company = await companyRepo.deleteById(req.params.id);
+
+        if (!company) {
+            return res.status(404).json({ success: false, error: "Entreprise introuvable" });
+        }
+
+        dbLog({ level: "warn", action: "COMPANY_DELETED", message: `Entreprise supprimée: ${company.name}`, userId: req.user._id, ip: req.ip, meta: { companyId: req.params.id, name: company.name } });
+
+        return res.status(200).json({ success: true, message: "Supprimé avec succès" });
     } catch (err) {
-        console.log(err);
+        return next(err);
     }
-
-    if (!company) {
-        return res.status(400).json({ message: "Suppression impossible" });
-    }
-
-    return res.status(200).json({ message: "Supprimé avec succès" });
 };
 
-export const getAccessToCompany = async (req, res) => {
-    const company = await Company.findOne({ "invite.key": req.params.key });
+export const getAccessToCompany = async (req, res, next) => {
+    try {
+        const company = await companyRepo.findByInviteKey(req.params.key);
 
-    if (!company) return res.status(404).send("Lien invalide");
+        if (!company) return res.status(404).json({ success: false, error: "Lien invalide" });
+        if (company.invite.used) return res.status(403).json({ success: false, error: "Lien déjà utilisé" });
 
-    if (company.invite.used) return res.status(403).send("Lien déjà utilisé");
+        const age = Date.now() - new Date(company.invite.createdAt).getTime();
+        const ageLimit = Number(process.env.INVITE_EXPIRE_DAYS) * 24 * 60 * 60 * 1000;
+        if (age > ageLimit) return res.status(403).json({ success: false, error: "Lien expiré" });
 
-    const age = Date.now() - new Date(company.invite.createdAt).getTime();
-    const ageLimit =
-        Number(process.env.INVITE_EXPIRE_DAYS) * 24 * 60 * 60 * 1000;
+        await companyRepo.consumeInvite(company);
 
-    if (age > ageLimit) return res.status(403).send("Lien expiré");
+        const token = jwt.sign(
+            { role: "limited", companyId: company._id.toString() },
+            process.env.JWT_SECRET,
+            { expiresIn: process.env.JWT_LIMITED_EXPIRES_IN },
+        );
 
-    company.invite.used = true;
-    await company.save();
+        dbLog({ action: "COMPANY_ACCESS_USED", message: `Lien d'accès utilisé: ${company._id}`, ip: req.ip, meta: { companyId: company._id } });
 
-    const token = jwt.sign(
-        {
-            role: "limited",
-            companyId: company.id,
-        },
-        process.env.JWT_SECRET,
-        { expiresIn: process.env.JWT_LIMITED_EXPIRES_IN },
-    );
-
-    res.json({ token });
+        return res.status(200).json({ success: true, token });
+    } catch (err) {
+        return next(err);
+    }
 };
 
-export const giveAccessToCompany = async (req, res) => {
-    const company = await Company.findOne({ id: req.params.id });
-    if (!company)
-        return res.status(404).json({ message: "Entreprise introuvable" });
+export const giveAccessToCompany = async (req, res, next) => {
+    try {
+        const key = crypto.randomBytes(20).toString("hex");
+        const company = await companyRepo.setInviteKey(req.params.id, key);
 
-    const key = crypto.randomBytes(20).toString("hex");
+        if (!company) {
+            return res.status(404).json({ success: false, error: "Entreprise introuvable" });
+        }
 
-    company.invite = {
-        key,
-        createdAt: new Date(),
-        used: false,
-    };
+        dbLog({ action: "COMPANY_ACCESS_GIVEN", message: `Lien d'accès généré pour: ${req.params.id}`, userId: req.user._id, ip: req.ip, meta: { companyId: req.params.id } });
 
-    await company.save();
-
-    // const link = `${process.env.FRONT_URL}/get-access/${key}`;
-    const link = `${key}`;
-
-    res.json({ link });
+        return res.status(200).json({ success: true, key });
+    } catch (err) {
+        return next(err);
+    }
 };

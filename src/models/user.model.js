@@ -39,12 +39,18 @@ const userSchema = new Schema(
         },
         role: {
             type: String,
-            enum: ["student", "teacher", "admin"],
+            enum: ["student", "teacher", "manager", "admin"],
             default: "student",
         },
+        promotion: {
+            type: String,
+            trim: true,
+        },
+        phone: { type: String, trim: true },
+        photo: { type: String, trim: true },
         verified: { type: Boolean, default: false },
-        activationToken: { type: String }, 
-        activationTokenExpires: { type: Date }, 
+        activationToken: { type: String },
+        activationTokenExpires: { type: Date },
     },
     { timestamps: true },
 );
