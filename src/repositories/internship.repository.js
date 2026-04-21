@@ -1,23 +1,25 @@
 import Internship from "../models/internship.model.js";
 
-const STUDENT_FIELDS = "firstname lastname email promotion photo";
+const STUDENT_FIELDS = "firstname lastname email photo group";
 const NAME_FIELDS = "firstname lastname";
-const COMPANY_FIELDS = "name sector logo address";
+const COMPANY_FIELDS = "name logo address sector";
 
 const findAll = (filter = {}) =>
     Internship.find(filter)
-        .populate("students", STUDENT_FIELDS)
-        .populate("company", COMPANY_FIELDS)
+        .populate({ path: "students", select: STUDENT_FIELDS, populate: { path: "group", select: "name color" } })
+        .populate({ path: "company", select: COMPANY_FIELDS, populate: { path: "sector", select: "name color" } })
         .populate("createdBy", NAME_FIELDS)
-        .populate("assignedTeacher", NAME_FIELDS);
+        .populate("assignedTeacher", NAME_FIELDS)
+        .populate("group", "name color");
 
 const findById = (id) =>
     Internship.findById(id)
-        .populate("students", STUDENT_FIELDS)
-        .populate("company")
+        .populate({ path: "students", select: STUDENT_FIELDS, populate: { path: "group", select: "name color" } })
+        .populate({ path: "company", populate: { path: "sector", select: "name color" } })
         .populate("createdBy", NAME_FIELDS)
         .populate("assignedTeacher", NAME_FIELDS)
-        .populate("evaluation.validatedBy", NAME_FIELDS);
+        .populate("evaluation.validatedBy", NAME_FIELDS)
+        .populate("group", "name color");
 
 const findRawById = (id) => Internship.findById(id);
 
@@ -44,6 +46,18 @@ const evaluate = (internship, { status, grade, comment, validatedBy }) => {
     return internship.save();
 };
 
+const submitDocs = (internship, { conventionUrl, reportUrl }) => {
+    internship.documents = { convention: conventionUrl, report: reportUrl, submittedAt: new Date() };
+    internship.status = "docs_submitted";
+    return internship.save();
+};
+
+const confirmDocs = (internship, { status, comment }) => {
+    internship.status = status;
+    if (status === "docs_rejected") internship.documents.rejectionComment = comment;
+    return internship.save();
+};
+
 const deleteById = (id) => Internship.findByIdAndDelete(id);
 
-export default { findAll, findById, findRawById, create, updateById, saveSheet, submit, evaluate, deleteById };
+export default { findAll, findById, findRawById, create, updateById, saveSheet, submit, evaluate, submitDocs, confirmDocs, deleteById };

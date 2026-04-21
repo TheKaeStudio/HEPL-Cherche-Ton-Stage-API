@@ -42,9 +42,10 @@ const userSchema = new Schema(
             enum: ["student", "teacher", "manager", "admin"],
             default: "student",
         },
-        promotion: {
-            type: String,
-            trim: true,
+        group: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "Group",
+            default: null,
         },
         phone: { type: String, trim: true },
         photo: { type: String, trim: true },

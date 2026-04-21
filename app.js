@@ -12,6 +12,7 @@ import notificationRouter from "./src/routes/notification.routes.js";
 import logRouter from "./src/routes/log.routes.js";
 import uploadRouter from "./src/routes/upload.routes.js";
 import groupRouter from "./src/routes/group.routes.js";
+import sectorRouter from "./src/routes/sector.routes.js";
 import errorMiddleware from "./src/middlewares/error.middleware.js";
 import { requestLogger } from "./src/middlewares/requestLogger.middleware.js";
 
@@ -38,6 +39,7 @@ app.use("/api/notifications", notificationRouter);
 app.use("/api/logs", logRouter);
 app.use("/api/upload", uploadRouter);
 app.use("/api/groups", groupRouter);
+app.use("/api/sectors", sectorRouter);
 
 // General Error Middleware
 app.use(errorMiddleware);

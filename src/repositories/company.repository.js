@@ -1,15 +1,35 @@
 import Company from "../models/company.model.js";
 
-const findAll = () => Company.find();
+const findAll = () => Company.find().populate("sector", "name color");
 
-const findById = (id) => Company.findById(id);
+const findById = (id) => Company.findById(id).populate("sector", "name color");
 
 const findByInviteKey = (key) => Company.findOne({ "invite.key": key });
 
-const create = (data) => Company.create(data);
+const normalizeContacts = (data) => {
+    const contacts = data.contacts?.length
+        ? data.contacts
+        : data.contact
+          ? [data.contact]
+          : [];
+
+    return {
+        ...data,
+        contacts: contacts,
+        contact: contacts[0] ?? undefined,
+    };
+};
+
+const create = async (data) => {
+    const company = await Company.create(normalizeContacts(data));
+    return company.populate("sector", "name color");
+};
 
 const updateById = (id, data) =>
-    Company.findByIdAndUpdate(id, data, { returnDocument: "after", runValidators: true });
+    Company.findByIdAndUpdate(id, normalizeContacts(data), {
+        returnDocument: "after",
+        runValidators: true,
+    }).populate("sector", "name color");
 
 const deleteById = (id) => Company.findByIdAndDelete(id);
 
@@ -25,4 +45,13 @@ const consumeInvite = (company) => {
     return company.save();
 };
 
-export default { findAll, findById, findByInviteKey, create, updateById, deleteById, setInviteKey, consumeInvite };
+export default {
+    findAll,
+    findById,
+    findByInviteKey,
+    create,
+    updateById,
+    deleteById,
+    setInviteKey,
+    consumeInvite,
+};

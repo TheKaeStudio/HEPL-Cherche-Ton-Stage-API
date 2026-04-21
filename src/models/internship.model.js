@@ -14,8 +14,9 @@ const internshipSchema = new Schema(
         company: {
             type: Schema.Types.ObjectId,
             ref: "Company",
-            required: [true, "Entreprise requise"],
+            default: null,
         },
+        externalCompanyName: { type: String, trim: true, default: null },
         createdBy: {
             type: Schema.Types.ObjectId,
             ref: "User",
@@ -34,14 +35,16 @@ const internshipSchema = new Schema(
             enum: ["Bachelier", "Master", "Observation"],
         },
         group: {
-            type: String,
-            trim: true,
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "Group",
+            default: null,
         },
         status: {
             type: String,
-            enum: ["assigned", "in_progress", "submitted", "validated", "rejected"],
+            enum: ["assigned", "in_progress", "submitted", "validated", "rejected", "docs_submitted", "docs_rejected", "completed"],
             default: "assigned",
         },
+        schoolYear: { type: String, trim: true },
         deadline: {
             type: Date,
         },
@@ -59,7 +62,16 @@ const internshipSchema = new Schema(
                 email: String,
                 phone: String,
             },
+            companyType: { type: String, enum: ["existing", "external"] },
+            externalCompanyName: String,
+            externalCompanyWebsite: String,
             submittedAt: Date,
+        },
+        documents: {
+            convention: String,
+            report: String,
+            submittedAt: Date,
+            rejectionComment: String,
         },
         evaluation: {
             grade: { type: Number, min: 0, max: 20 },

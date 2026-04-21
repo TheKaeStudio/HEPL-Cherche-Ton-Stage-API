@@ -2,9 +2,9 @@ import User from "../models/user.model.js";
 
 const HIDDEN_FIELDS = "-password -activationToken -activationTokenExpires";
 
-const findAll = () => User.find().select(HIDDEN_FIELDS);
+const findAll = () => User.find().select(HIDDEN_FIELDS).populate("group", "name color");
 
-const findById = (id) => User.findById(id);
+const findById = (id) => User.findById(id).populate("group", "name color");
 
 const findByEmail = (email) => User.findOne({ email });
 
@@ -17,8 +17,6 @@ const findByActivationToken = (token) =>
     });
 
 const findVerifiedIds = () => User.find({ verified: true }, "_id");
-
-const findDistinctPromotions = () => User.distinct("promotion", { role: "student", promotion: { $exists: true, $ne: null, $ne: "" } });
 
 const create = (data, session = null) =>
     session
@@ -33,8 +31,10 @@ const activate = (user) => {
 };
 
 const updateById = (id, data) =>
-    User.findByIdAndUpdate(id, data, { returnDocument: "after", runValidators: true }).select(HIDDEN_FIELDS);
+    User.findByIdAndUpdate(id, data, { returnDocument: "after", runValidators: true })
+        .select(HIDDEN_FIELDS)
+        .populate("group", "name color");
 
 const deleteById = (id) => User.findByIdAndDelete(id);
 
-export default { findAll, findById, findByEmail, findByEmailWithPassword, findByActivationToken, findVerifiedIds, findDistinctPromotions, create, activate, updateById, deleteById };
+export default { findAll, findById, findByEmail, findByEmailWithPassword, findByActivationToken, findVerifiedIds, create, activate, updateById, deleteById };

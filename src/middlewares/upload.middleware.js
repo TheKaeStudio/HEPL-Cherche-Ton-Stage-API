@@ -23,3 +23,17 @@ export const uploadMiddleware = multer({
     limits: { fileSize: 5 * 1024 * 1024 },
     fileFilter,
 });
+
+const pdfFilter = (req, file, cb) => {
+    if (file.mimetype === "application/pdf") {
+        cb(null, true);
+    } else {
+        cb(Object.assign(new Error("Seuls les fichiers PDF sont autorisés"), { statusCode: 400 }), false);
+    }
+};
+
+export const uploadPdfMiddleware = multer({
+    storage,
+    limits: { fileSize: 10 * 1024 * 1024 },
+    fileFilter: pdfFilter,
+});

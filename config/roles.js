@@ -17,6 +17,10 @@ export const rolePermissions = {
         p.COMMENT_CREATE,
         p.USER_READ,
         p.USER_UPDATE,
+        p.GROUP_READ,
+        p.GROUP_CREATE,
+        p.GROUP_UPDATE,
+        p.GROUP_DELETE,
     ],
 
     admin: [
@@ -35,6 +39,13 @@ export const rolePermissions = {
         p.USER_CREATE,
         p.USER_UPDATE,
         p.USER_DELETE,
+        p.GROUP_READ,
+        p.GROUP_CREATE,
+        p.GROUP_UPDATE,
+        p.GROUP_DELETE,
+        p.SECTOR_CREATE,
+        p.SECTOR_UPDATE,
+        p.SECTOR_DELETE,
         p.LOG_READ,
     ],
 };

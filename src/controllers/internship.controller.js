@@ -1,4 +1,5 @@
 import internshipRepo from "../repositories/internship.repository.js";
+import userRepo from "../repositories/user.repository.js";
 import { createNotification } from "../utils/createNotification.js";
 import dbLog from "../utils/dbLogger.js";
 
@@ -42,19 +43,27 @@ export const getInternshipById = async (req, res, next) => {
 };
 
 export const createInternship = async (req, res, next) => {
-    const { students, companyId, assignedTeacher, deadline, title, type, group } = req.body;
+    const { students, companyId, externalCompanyName, assignedTeacher, deadline, title, type, group, schoolYear } = req.body;
     const studentIds = Array.isArray(students) ? students : [students];
 
     try {
+        let resolvedGroup = group ?? null;
+        if (!resolvedGroup && studentIds.length > 0) {
+            const firstStudent = await userRepo.findById(studentIds[0]);
+            if (firstStudent?.group) resolvedGroup = firstStudent.group;
+        }
+
         const internship = await internshipRepo.create({
             students: studentIds,
-            company: companyId,
+            company: companyId ?? null,
+            externalCompanyName: externalCompanyName ?? null,
             createdBy: req.user._id,
             assignedTeacher,
             deadline,
             title,
             type,
-            group,
+            group: resolvedGroup,
+            schoolYear,
             isGroupAssignment: studentIds.length > 1,
         });
 
@@ -71,11 +80,11 @@ export const createInternship = async (req, res, next) => {
 };
 
 export const updateInternship = async (req, res, next) => {
-    const { assignedTeacher, deadline, companyId, title, type, group } = req.body;
+    const { assignedTeacher, deadline, companyId, externalCompanyName, title, type, group, schoolYear } = req.body;
 
     try {
         const internship = await internshipRepo.updateById(req.params.id, {
-            assignedTeacher, deadline, company: companyId, title, type, group,
+            assignedTeacher, deadline, company: companyId ?? null, externalCompanyName: externalCompanyName ?? null, title, type, group, schoolYear,
         });
 
         if (!internship) {
@@ -89,7 +98,7 @@ export const updateInternship = async (req, res, next) => {
 };
 
 export const updateSheet = async (req, res, next) => {
-    const { startDate, endDate, missions, description, companyTutor } = req.body;
+    const { startDate, endDate, missions, description, companyTutor, companyType, externalCompanyName, externalCompanyWebsite } = req.body;
     const user = req.user;
 
     try {
@@ -105,7 +114,7 @@ export const updateSheet = async (req, res, next) => {
             return res.status(400).json({ success: false, error: "Ce stage ne peut plus être modifié" });
         }
 
-        const updated = await internshipRepo.saveSheet(internship, { startDate, endDate, missions, description, companyTutor });
+        const updated = await internshipRepo.saveSheet(internship, { startDate, endDate, missions, description, companyTutor, companyType, externalCompanyName, externalCompanyWebsite });
         return res.status(200).json({ success: true, internship: updated });
     } catch (err) {
         return next(err);
@@ -163,6 +172,67 @@ export const validateInternship = async (req, res, next) => {
         dbLog({ action: "INTERNSHIP_VALIDATED", message: `Stage ${req.params.id} → ${status}`, userId: req.user._id, ip: req.ip, meta: { internshipId: req.params.id, status, grade } });
 
         return res.status(200).json({ success: true, internship: updated });
+    } catch (err) {
+        return next(err);
+    }
+};
+
+export const submitDocs = async (req, res, next) => {
+    const user = req.user;
+
+    try {
+        const internship = await internshipRepo.findRawById(req.params.id);
+
+        if (!internship) return res.status(404).json({ success: false, error: "Stage introuvable" });
+
+        if (!internship.students.some((s) => s.equals(user._id))) {
+            return res.status(403).json({ success: false, error: "Accès refusé" });
+        }
+
+        if (!["validated", "docs_rejected"].includes(internship.status)) {
+            return res.status(400).json({ success: false, error: "Ce stage ne peut pas soumettre des documents dans son état actuel" });
+        }
+
+        const baseUrl = process.env.BASE_URL || `http://localhost:${process.env.PORT || 5500}`;
+        const conventionUrl = req.files?.convention?.[0] ? `${baseUrl}/uploads/${req.files.convention[0].filename}` : null;
+        const reportUrl = req.files?.report?.[0] ? `${baseUrl}/uploads/${req.files.report[0].filename}` : null;
+
+        if (!conventionUrl || !reportUrl) {
+            return res.status(400).json({ success: false, error: "Les fichiers convention et rapport sont requis" });
+        }
+
+        const updated = await internshipRepo.submitDocs(internship, { conventionUrl, reportUrl });
+        const populated = await internshipRepo.findById(updated._id);
+        return res.status(200).json({ success: true, internship: populated });
+    } catch (err) {
+        return next(err);
+    }
+};
+
+export const confirmDocs = async (req, res, next) => {
+    const { status, comment } = req.body;
+
+    if (!["completed", "docs_rejected"].includes(status)) {
+        return res.status(400).json({ success: false, error: "Statut invalide (completed ou docs_rejected attendu)" });
+    }
+
+    try {
+        const internship = await internshipRepo.findRawById(req.params.id);
+
+        if (!internship) return res.status(404).json({ success: false, error: "Stage introuvable" });
+
+        if (internship.status !== "docs_submitted") {
+            return res.status(400).json({ success: false, error: "Les documents n'ont pas encore été soumis" });
+        }
+
+        const updated = await internshipRepo.confirmDocs(internship, { status, comment });
+        const populated = await internshipRepo.findById(updated._id);
+
+        for (const studentId of internship.students) {
+            createNotification(studentId, "internship_status_changed", "Internship", internship._id);
+        }
+
+        return res.status(200).json({ success: true, internship: populated });
     } catch (err) {
         return next(err);
     }

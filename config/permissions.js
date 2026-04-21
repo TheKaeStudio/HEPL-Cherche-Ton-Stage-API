@@ -14,6 +14,13 @@ const PERMISSIONS = {
     USER_CREATE: "user:create",
     USER_UPDATE: "user:update",
     USER_DELETE: "user:delete",
+    GROUP_READ: "group:read",
+    GROUP_CREATE: "group:create",
+    GROUP_UPDATE: "group:update",
+    GROUP_DELETE: "group:delete",
+    SECTOR_CREATE: "sector:create",
+    SECTOR_UPDATE: "sector:update",
+    SECTOR_DELETE: "sector:delete",
     LOG_READ: "log:read",
 };
 

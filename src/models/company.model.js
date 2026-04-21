@@ -15,8 +15,9 @@ const companySchema = new Schema(
         },
         logo: { type: String, trim: true },
         sector: {
-            type: String,
-            trim: true,
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "Sector",
+            default: null,
         },
         size: {
             type: String,
@@ -33,11 +34,18 @@ const companySchema = new Schema(
         },
         website: { type: String, trim: true },
         phone: { type: String, trim: true },
-        contactPerson: {
+        contact: {
             name: String,
             email: String,
             phone: String,
         },
+        contacts: [
+            {
+                name: String,
+                email: String,
+                phone: String,
+            },
+        ],
         invite: {
             key: String,
             createdAt: Date,

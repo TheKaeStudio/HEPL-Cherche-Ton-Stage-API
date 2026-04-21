@@ -27,7 +27,7 @@ export const getUser = async (req, res, next) => {
 };
 
 export const updateUser = async (req, res, next) => {
-    const { role, promotion } = req.body;
+    const { role, group, phone, photo } = req.body;
     const requesterId = req.user._id;
     const requesterRole = req.user.role;
 
@@ -37,7 +37,9 @@ export const updateUser = async (req, res, next) => {
 
     const updates = {};
     if (role !== undefined) updates.role = role;
-    if (promotion !== undefined) updates.promotion = promotion;
+    if (group !== undefined) updates.group = group;
+    if (phone !== undefined) updates.phone = phone;
+    if (photo !== undefined) updates.photo = photo;
 
     try {
         const user = await userRepo.updateById(req.params.id, updates);
@@ -66,15 +68,6 @@ export const updateMe = async (req, res, next) => {
     try {
         const user = await userRepo.updateById(req.user._id, updates);
         return res.status(200).json({ success: true, user });
-    } catch (err) {
-        return next(err);
-    }
-};
-
-export const getGroups = async (req, res, next) => {
-    try {
-        const groups = await userRepo.findDistinctPromotions();
-        return res.status(200).json({ success: true, groups });
     } catch (err) {
         return next(err);
     }
