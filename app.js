@@ -16,6 +16,12 @@ import groupRouter from "./src/routes/group.routes.js";
 import sectorRouter from "./src/routes/sector.routes.js";
 import errorMiddleware from "./src/middlewares/error.middleware.js";
 import { requestLogger } from "./src/middlewares/requestLogger.middleware.js";
+import transporter from "./config/nodemailer.js";
+
+await transporter
+    .verify()
+    .then(() => console.log("SMTP OK"))
+    .catch((err) => console.error("SMTP FAIL", err));
 
 const app = express();
 
