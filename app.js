@@ -1,6 +1,7 @@
 import "dotenv/config";
 import express from "express";
 import cors from "cors";
+import dns from "dns";
 
 import connectDB from "./config/db.js";
 
@@ -14,17 +15,18 @@ import logRouter from "./src/routes/log.routes.js";
 import uploadRouter from "./src/routes/upload.routes.js";
 import groupRouter from "./src/routes/group.routes.js";
 import sectorRouter from "./src/routes/sector.routes.js";
+
 import errorMiddleware from "./src/middlewares/error.middleware.js";
 import { requestLogger } from "./src/middlewares/requestLogger.middleware.js";
+
 import transporter from "./config/nodemailer.js";
-import dns from "dns";
 
 dns.setDefaultResultOrder("ipv4first");
 
-await transporter
+transporter
     .verify()
     .then(() => console.log("SMTP OK"))
-    .catch((err) => console.error("SMTP FAIL", err));
+    .catch((err) => console.error("SMTP FAIL (non-blocking):", err));
 
 const app = express();
 
@@ -34,13 +36,16 @@ const ALLOWED_ORIGINS = [
     process.env.FRONTEND_URL,
 ].filter(Boolean);
 
-app.use(cors({
-    origin: (origin, callback) => {
-        if (!origin || ALLOWED_ORIGINS.includes(origin)) callback(null, true);
-        else callback(new Error("Not allowed by CORS"));
-    },
-    credentials: true,
-}));
+app.use(
+    cors({
+        origin: (origin, callback) => {
+            if (!origin) return callback(null, true);
+            if (ALLOWED_ORIGINS.includes(origin)) return callback(null, true);
+            return callback(new Error("Not allowed by CORS"));
+        },
+        credentials: true,
+    }),
+);
 
 app.use(express.json());
 app.use(requestLogger);
@@ -57,6 +62,10 @@ app.use("/api/upload", uploadRouter);
 app.use("/api/groups", groupRouter);
 app.use("/api/sectors", sectorRouter);
 
+app.get("/api/health", (req, res) => {
+    res.json({ status: "ok" });
+});
+
 app.use(errorMiddleware);
 
 app.use((req, res) => {
@@ -64,14 +73,25 @@ app.use((req, res) => {
 });
 
 app.use((err, req, res, next) => {
-    console.error(err.stack);
+    console.error(err);
     res.status(500).json({ message: "Erreur serveur" });
 });
 
-// Connect DB then start server (local only — Vercel handles the server itself)
-connectDB().then(() => {
-    const PORT = process.env.PORT || 5500;
-    app.listen(PORT, () => console.log(`Server launched on port ${PORT}`));
-}).catch(console.error);
+const startServer = async () => {
+    try {
+        await connectDB();
+
+        const PORT = process.env.PORT || 5500;
+
+        app.listen(PORT, () => {
+            console.log(`Server launched on port ${PORT}`);
+        });
+    } catch (err) {
+        console.error(err);
+        process.exit(1);
+    }
+};
+
+startServer();
 
 export default app;
