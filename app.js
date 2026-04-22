@@ -17,6 +17,9 @@ import sectorRouter from "./src/routes/sector.routes.js";
 import errorMiddleware from "./src/middlewares/error.middleware.js";
 import { requestLogger } from "./src/middlewares/requestLogger.middleware.js";
 import transporter from "./config/nodemailer.js";
+import dns from "dns";
+
+dns.setDefaultResultOrder("ipv4first");
 
 await transporter
     .verify()
