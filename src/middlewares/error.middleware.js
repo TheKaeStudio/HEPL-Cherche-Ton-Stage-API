@@ -11,9 +11,9 @@ const errorMiddleware = (err, req, res, next) => {
     }
 
     if (err.code === 11000) {
-        const field = Object.keys(err.keyValue);
+        const field = Object.keys(err.keyValue)[0];
         statusCode = 400;
-        message = `Un utilisateur avec ce ${field} existe déjà`;
+        message = `La valeur du champ "${field}" est déjà utilisée.`;
     }
 
     if (err.name === "ValidationError") {
