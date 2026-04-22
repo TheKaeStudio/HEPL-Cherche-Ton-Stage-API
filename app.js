@@ -61,10 +61,8 @@ app.use((err, req, res, next) => {
 
 // Connect DB then start server (local only — Vercel handles the server itself)
 connectDB().then(() => {
-    if (process.env.NODE_ENV !== "production") {
-        const PORT = process.env.PORT || 5500;
-        app.listen(PORT, () => console.log(`Server launched on port ${PORT}`));
-    }
+    const PORT = process.env.PORT || 5500;
+    app.listen(PORT, () => console.log(`Server launched on port ${PORT}`));
 }).catch(console.error);
 
 export default app;
