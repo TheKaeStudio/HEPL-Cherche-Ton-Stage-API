@@ -1,9 +1,29 @@
 import userRepo from "../repositories/user.repository.js";
 import dbLog from "../utils/dbLogger.js";
 
+const parsePage = (query, defaultLimit = 20) => {
+    const page  = Math.max(1, parseInt(query.page)  || 1);
+    const limit = Math.min(100, parseInt(query.limit) || defaultLimit);
+    const skip  = (page - 1) * limit;
+    return { page, limit, skip };
+};
+
 export const getUsers = async (req, res, next) => {
     try {
-        const users = await userRepo.findAll();
+        const filter = req.query.role ? { role: req.query.role } : {};
+        if (req.query.page) {
+            const { page, limit, skip } = parsePage(req.query);
+            const { users, total }      = await userRepo.findPaginated(filter, skip, limit);
+            return res.status(200).json({
+                success: true,
+                users,
+                total,
+                hasMore: skip + users.length < total,
+                page,
+                limit,
+            });
+        }
+        const users = await userRepo.findAll(filter);
         return res.status(200).json({ success: true, users });
     } catch (err) {
         return next(err);

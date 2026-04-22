@@ -1,5 +1,6 @@
 import "dotenv/config";
 import express from "express";
+import cors from "cors";
 
 import connectDB from "./config/db.js";
 
@@ -18,13 +19,19 @@ import { requestLogger } from "./src/middlewares/requestLogger.middleware.js";
 
 const app = express();
 
-const PORT = process.env.PORT || 5500;
+const ALLOWED_ORIGINS = [
+    "http://localhost:5173",
+    "http://localhost:4173",
+    process.env.FRONTEND_URL,
+].filter(Boolean);
 
-app.listen(PORT, async () => {
-    console.log(`Server launched on port ${PORT}`);
-    
-    await connectDB();
-});
+app.use(cors({
+    origin: (origin, callback) => {
+        if (!origin || ALLOWED_ORIGINS.includes(origin)) callback(null, true);
+        else callback(new Error("Not allowed by CORS"));
+    },
+    credentials: true,
+}));
 
 app.use(express.json());
 app.use(requestLogger);
@@ -41,16 +48,23 @@ app.use("/api/upload", uploadRouter);
 app.use("/api/groups", groupRouter);
 app.use("/api/sectors", sectorRouter);
 
-// General Error Middleware
 app.use(errorMiddleware);
 
-// Middleware 404
 app.use((req, res) => {
     res.status(404).json({ message: "Route introuvable" });
 });
 
-// Middleware 500
 app.use((err, req, res, next) => {
     console.error(err.stack);
     res.status(500).json({ message: "Erreur serveur" });
 });
+
+// Connect DB then start server (local only — Vercel handles the server itself)
+connectDB().then(() => {
+    if (process.env.NODE_ENV !== "production") {
+        const PORT = process.env.PORT || 5500;
+        app.listen(PORT, () => console.log(`Server launched on port ${PORT}`));
+    }
+}).catch(console.error);
+
+export default app;

@@ -1,8 +1,27 @@
 import messageRepo from "../repositories/message.repository.js";
 import { createNotification } from "../utils/createNotification.js";
 
+const parsePage = (query, defaultLimit = 20) => {
+    const page  = Math.max(1, parseInt(query.page)  || 1);
+    const limit = Math.min(100, parseInt(query.limit) || defaultLimit);
+    const skip  = (page - 1) * limit;
+    return { page, limit, skip };
+};
+
 export const getInbox = async (req, res, next) => {
     try {
+        if (req.query.page) {
+            const { page, limit, skip } = parsePage(req.query);
+            const { messages, total }   = await messageRepo.findByRecipientPaginated(req.user._id, skip, limit);
+            return res.status(200).json({
+                success: true,
+                messages,
+                total,
+                hasMore: skip + messages.length < total,
+                page,
+                limit,
+            });
+        }
         const messages = await messageRepo.findByRecipient(req.user._id);
         return res.status(200).json({ success: true, messages });
     } catch (err) {

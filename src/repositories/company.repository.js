@@ -1,6 +1,14 @@
 import Company from "../models/company.model.js";
 
-const findAll = () => Company.find().populate("sector", "name color");
+const findAll = () => Company.find().populate("sector", "name color").sort({ createdAt: -1 });
+
+const findPaginated = async (skip, limit) => {
+    const [companies, total] = await Promise.all([
+        Company.find().populate("sector", "name color").sort({ createdAt: -1 }).skip(skip).limit(limit),
+        Company.countDocuments(),
+    ]);
+    return { companies, total };
+};
 
 const findById = (id) => Company.findById(id).populate("sector", "name color");
 
@@ -47,6 +55,7 @@ const consumeInvite = (company) => {
 
 export default {
     findAll,
+    findPaginated,
     findById,
     findByInviteKey,
     create,

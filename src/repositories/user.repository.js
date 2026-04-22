@@ -2,7 +2,15 @@ import User from "../models/user.model.js";
 
 const HIDDEN_FIELDS = "-password -activationToken -activationTokenExpires";
 
-const findAll = () => User.find().select(HIDDEN_FIELDS).populate("group", "name color");
+const findAll = (filter = {}) => User.find(filter).select(HIDDEN_FIELDS).populate("group", "name color");
+
+const findPaginated = async (filter, skip, limit) => {
+    const [users, total] = await Promise.all([
+        User.find(filter).select(HIDDEN_FIELDS).populate("group", "name color").sort({ createdAt: -1 }).skip(skip).limit(limit),
+        User.countDocuments(filter),
+    ]);
+    return { users, total };
+};
 
 const findById = (id) => User.findById(id).populate("group", "name color");
 
@@ -37,4 +45,4 @@ const updateById = (id, data) =>
 
 const deleteById = (id) => User.findByIdAndDelete(id);
 
-export default { findAll, findById, findByEmail, findByEmailWithPassword, findByActivationToken, findVerifiedIds, create, activate, updateById, deleteById };
+export default { findAll, findPaginated, findById, findByEmail, findByEmailWithPassword, findByActivationToken, findVerifiedIds, create, activate, updateById, deleteById };

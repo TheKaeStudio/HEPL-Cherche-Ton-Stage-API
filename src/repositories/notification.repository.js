@@ -3,6 +3,15 @@ import Notification from "../models/notification.model.js";
 const findByUser = (userId) =>
     Notification.find({ user: userId }).sort({ createdAt: -1 });
 
+const findByUserPaginated = async (userId, skip, limit) => {
+    const filter = { user: userId };
+    const [notifications, total] = await Promise.all([
+        Notification.find(filter).sort({ createdAt: -1 }).skip(skip).limit(limit),
+        Notification.countDocuments(filter),
+    ]);
+    return { notifications, total };
+};
+
 const findByIdAndUser = (id, userId) =>
     Notification.findOne({ _id: id, user: userId });
 
@@ -19,4 +28,4 @@ const markAsRead = async (id, userId) => {
 const markAllAsRead = (userId) =>
     Notification.updateMany({ user: userId, read: false }, { read: true, readAt: new Date() });
 
-export default { findByUser, findByIdAndUser, create, markAsRead, markAllAsRead };
+export default { findByUser, findByUserPaginated, findByIdAndUser, create, markAsRead, markAllAsRead };

@@ -4,13 +4,22 @@ const STUDENT_FIELDS = "firstname lastname email photo group";
 const NAME_FIELDS = "firstname lastname";
 const COMPANY_FIELDS = "name logo address sector";
 
-const findAll = (filter = {}) =>
-    Internship.find(filter)
-        .populate({ path: "students", select: STUDENT_FIELDS, populate: { path: "group", select: "name color" } })
-        .populate({ path: "company", select: COMPANY_FIELDS, populate: { path: "sector", select: "name color" } })
-        .populate("createdBy", NAME_FIELDS)
-        .populate("assignedTeacher", NAME_FIELDS)
-        .populate("group", "name color");
+const POPULATE_ALL = (query) => query
+    .populate({ path: "students", select: STUDENT_FIELDS, populate: { path: "group", select: "name color" } })
+    .populate({ path: "company", select: COMPANY_FIELDS, populate: { path: "sector", select: "name color" } })
+    .populate("createdBy", NAME_FIELDS)
+    .populate("assignedTeacher", NAME_FIELDS)
+    .populate("group", "name color");
+
+const findAll = (filter = {}) => POPULATE_ALL(Internship.find(filter)).sort({ createdAt: -1 });
+
+const findAllPaginated = async (filter, skip, limit) => {
+    const [internships, total] = await Promise.all([
+        POPULATE_ALL(Internship.find(filter)).sort({ createdAt: -1 }).skip(skip).limit(limit),
+        Internship.countDocuments(filter),
+    ]);
+    return { internships, total };
+};
 
 const findById = (id) =>
     Internship.findById(id)
@@ -60,4 +69,4 @@ const confirmDocs = (internship, { status, comment }) => {
 
 const deleteById = (id) => Internship.findByIdAndDelete(id);
 
-export default { findAll, findById, findRawById, create, updateById, saveSheet, submit, evaluate, submitDocs, confirmDocs, deleteById };
+export default { findAll, findAllPaginated, findById, findRawById, create, updateById, saveSheet, submit, evaluate, submitDocs, confirmDocs, deleteById };

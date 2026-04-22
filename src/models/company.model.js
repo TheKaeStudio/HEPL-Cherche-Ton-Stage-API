@@ -9,10 +9,7 @@ const companySchema = new Schema(
             required: [true, "Nom de l'entreprise requis"],
             trim: true,
         },
-        description: {
-            type: String,
-            required: [true, "Description requise"],
-        },
+        description: { type: String },
         logo: { type: String, trim: true },
         sector: {
             type: mongoose.Schema.Types.ObjectId,

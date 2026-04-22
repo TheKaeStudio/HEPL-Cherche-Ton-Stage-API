@@ -3,6 +3,13 @@ import userRepo from "../repositories/user.repository.js";
 import { createNotification } from "../utils/createNotification.js";
 import dbLog from "../utils/dbLogger.js";
 
+const parsePage = (query, defaultLimit = 20) => {
+    const page  = Math.max(1, parseInt(query.page)  || 1);
+    const limit = Math.min(100, parseInt(query.limit) || defaultLimit);
+    const skip  = (page - 1) * limit;
+    return { page, limit, skip };
+};
+
 export const getInternships = async (req, res, next) => {
     const user = req.user;
     let filter = {};
@@ -11,6 +18,18 @@ export const getInternships = async (req, res, next) => {
     else if (user.role === "teacher") filter = { assignedTeacher: user._id };
 
     try {
+        if (req.query.page) {
+            const { page, limit, skip }    = parsePage(req.query);
+            const { internships, total }   = await internshipRepo.findAllPaginated(filter, skip, limit);
+            return res.status(200).json({
+                success: true,
+                internships,
+                total,
+                hasMore: skip + internships.length < total,
+                page,
+                limit,
+            });
+        }
         const internships = await internshipRepo.findAll(filter);
         return res.status(200).json({ success: true, internships });
     } catch (err) {

@@ -1,12 +1,19 @@
 import crypto from "crypto";
 import jwt from "jsonwebtoken";
 import companyRepo from "../repositories/company.repository.js";
+
+const parsePage = (query, defaultLimit = 20) => {
+    const page  = Math.max(1, parseInt(query.page)  || 1);
+    const limit = Math.min(100, parseInt(query.limit) || defaultLimit);
+    const skip  = (page - 1) * limit;
+    return { page, limit, skip };
+};
 import userRepo from "../repositories/user.repository.js";
 import { createNotification } from "../utils/createNotification.js";
 import dbLog from "../utils/dbLogger.js";
 
 const formatCompany = (company) => {
-    const contacts = company.contact?.length
+    const contacts = company.contacts?.length
         ? company.contacts
         : company.contact
           ? [company.contact]
@@ -21,11 +28,20 @@ const formatCompany = (company) => {
 
 export const getCompanies = async (req, res, next) => {
     try {
+        if (req.query.page) {
+            const { page, limit, skip } = parsePage(req.query);
+            const { companies, total }  = await companyRepo.findPaginated(skip, limit);
+            return res.status(200).json({
+                success: true,
+                companies: companies.map(formatCompany),
+                total,
+                hasMore: skip + companies.length < total,
+                page,
+                limit,
+            });
+        }
         const companies = await companyRepo.findAll();
-        return res.status(200).json({
-            success: true,
-            companies: companies.map(formatCompany),
-        });
+        return res.status(200).json({ success: true, companies: companies.map(formatCompany) });
     } catch (err) {
         return next(err);
     }
@@ -63,7 +79,7 @@ export const createCompany = async (req, res, next) => {
     } = req.body;
 
     try {
-        const contacts = contacts?.length
+        const contactList = contacts?.length
             ? contacts
             : contact
               ? [contact]
@@ -80,8 +96,8 @@ export const createCompany = async (req, res, next) => {
             address,
             website,
             phone,
-            contacts: contacts,
-            contact: contacts[0] ?? undefined,
+            contacts: contactList,
+            contact: contactList[0] ?? undefined,
         });
 
         const users = await userRepo.findVerifiedIds();
@@ -120,7 +136,7 @@ export const updateCompany = async (req, res, next) => {
     } = req.body;
 
     try {
-        const contacts = contacts?.length
+        const contactList = contacts?.length
             ? contacts
             : contact
               ? [contact]
@@ -137,8 +153,8 @@ export const updateCompany = async (req, res, next) => {
             address,
             website,
             phone,
-            contacts: contacts,
-            contact: contacts[0] ?? undefined,
+            contacts: contactList,
+            contact: contactList[0] ?? undefined,
         });
 
         if (!company) {
