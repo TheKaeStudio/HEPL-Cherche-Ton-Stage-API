@@ -18,15 +18,16 @@ import sectorRouter from "./src/routes/sector.routes.js";
 
 import errorMiddleware from "./src/middlewares/error.middleware.js";
 import { requestLogger } from "./src/middlewares/requestLogger.middleware.js";
+import { sendActivationEmail } from "./src/utils/sendActivationEmail.js";
+import { Resend } from "resend";
 
-import transporter from "./config/nodemailer.js";
+const resend = new Resend(process.env.RESEND_API_KEY);
+
+sendActivationEmail("dradarkx@gmail.com", "Oui").catch((err) =>
+    console.error("EMAIL FAIL:", err),
+);
 
 dns.setDefaultResultOrder("ipv4first");
-
-transporter
-    .verify()
-    .then(() => console.log("SMTP OK"))
-    .catch((err) => console.error("SMTP FAIL (non-blocking):", err));
 
 const app = express();
 

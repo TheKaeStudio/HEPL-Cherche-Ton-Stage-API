@@ -13,22 +13,9 @@ export const signUp = async (req, res, next) => {
 
         const existingUser = await userRepo.findByEmail(normalizedEmail);
         if (existingUser) {
-            if (
-                !existingUser.verified &&
-                existingUser.activationTokenExpires < Date.now()
-            ) {
-                await userRepo.deleteById(existingUser._id);
-            } else if (!existingUser.verified) {
-                const err = new Error(
-                    "Un email de confirmation t'a déjà été envoyé. Vérifie ta boîte mail ou réessaie dans 24h.",
-                );
-                err.statusCode = 409;
-                throw err;
-            } else {
-                const err = new Error("Cette adresse mail est déjà utilisée");
-                err.statusCode = 409;
-                throw err;
-            }
+            const err = new Error("Cette adresse mail est déjà utilisée");
+            err.statusCode = 409;
+            throw err;
         }
 
         let role = "student";
@@ -36,8 +23,6 @@ export const signUp = async (req, res, next) => {
 
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(password, salt);
-        const activationToken = crypto.randomBytes(32).toString("hex");
-        const activationTokenExpires = Date.now() + 24 * 60 * 60 * 1000;
 
         const newUser = await userRepo.create({
             lastname,
@@ -45,39 +30,99 @@ export const signUp = async (req, res, next) => {
             email: normalizedEmail,
             password: hashedPassword,
             role,
-            verified: false,
-            activationToken,
-            activationTokenExpires,
+            verified: true,
         });
-
-        try {
-            await transporter.verify();
-            await sendActivationEmail(normalizedEmail, activationToken);
-        } catch (emailErr) {
-            await userRepo.deleteById(newUser._id);
-            const err = new Error(
-                "Impossible d'envoyer l'email de confirmation. Vérifie l'adresse email et réessaie.",
-            );
-            err.statusCode = 500;
-            throw err;
-        }
 
         dbLog({
             action: "AUTH_SIGNUP",
             message: `Nouvelle inscription: ${normalizedEmail}`,
             userId: newUser._id,
             ip: req.ip,
-            meta: { email: normalizedEmail, role },
+            meta: { email: normalizedEmail, role, noEmail: true },
         });
 
         return res.status(201).json({
             success: true,
-            message: "Vérifie ta boîte mail pour activer ton compte.",
+            message: "Compte créé avec succès.",
+            user: newUser,
         });
     } catch (err) {
         return next(err);
     }
 };
+
+// export const signUp = async (req, res, next) => {
+//     try {
+//         const { lastname, firstname, email, password } = req.body;
+//         const normalizedEmail = email.toLowerCase();
+
+//         const existingUser = await userRepo.findByEmail(normalizedEmail);
+//         if (existingUser) {
+//             if (
+//                 !existingUser.verified &&
+//                 existingUser.activationTokenExpires < Date.now()
+//             ) {
+//                 await userRepo.deleteById(existingUser._id);
+//             } else if (!existingUser.verified) {
+//                 const err = new Error(
+//                     "Un email de confirmation t'a déjà été envoyé. Vérifie ta boîte mail ou réessaie dans 24h.",
+//                 );
+//                 err.statusCode = 409;
+//                 throw err;
+//             } else {
+//                 const err = new Error("Cette adresse mail est déjà utilisée");
+//                 err.statusCode = 409;
+//                 throw err;
+//             }
+//         }
+
+//         let role = "student";
+//         if (normalizedEmail.endsWith("@hepl.be")) role = "teacher";
+
+//         const salt = await bcrypt.genSalt(10);
+//         const hashedPassword = await bcrypt.hash(password, salt);
+//         const activationToken = crypto.randomBytes(32).toString("hex");
+//         const activationTokenExpires = Date.now() + 24 * 60 * 60 * 1000;
+
+//         const newUser = await userRepo.create({
+//             lastname,
+//             firstname,
+//             email: normalizedEmail,
+//             password: hashedPassword,
+//             role,
+//             verified: false,
+//             activationToken,
+//             activationTokenExpires,
+//         });
+
+//         try {
+//             await transporter.verify();
+//             await sendActivationEmail(normalizedEmail, activationToken);
+//         } catch (emailErr) {
+//             await userRepo.deleteById(newUser._id);
+//             const err = new Error(
+//                 "Impossible d'envoyer l'email de confirmation. Vérifie l'adresse email et réessaie.",
+//             );
+//             err.statusCode = 500;
+//             throw err;
+//         }
+
+//         dbLog({
+//             action: "AUTH_SIGNUP",
+//             message: `Nouvelle inscription: ${normalizedEmail}`,
+//             userId: newUser._id,
+//             ip: req.ip,
+//             meta: { email: normalizedEmail, role },
+//         });
+
+//         return res.status(201).json({
+//             success: true,
+//             message: "Vérifie ta boîte mail pour activer ton compte.",
+//         });
+//     } catch (err) {
+//         return next(err);
+//     }
+// };
 
 export const signIn = async (req, res, next) => {
     try {
@@ -139,13 +184,11 @@ export const signIn = async (req, res, next) => {
         });
 
         const { password: _, ...userWithoutPassword } = user.toObject();
-        return res
-            .status(200)
-            .json({
-                success: true,
-                message: "Connecté avec succès",
-                data: { token, user: userWithoutPassword },
-            });
+        return res.status(200).json({
+            success: true,
+            message: "Connecté avec succès",
+            data: { token, user: userWithoutPassword },
+        });
     } catch (err) {
         return next(err);
     }
@@ -170,13 +213,11 @@ export const activateAccount = async (req, res, next) => {
             ip: req.ip,
         });
 
-        return res
-            .status(200)
-            .json({
-                success: true,
-                message:
-                    "Compte activé avec succès ! Tu peux maintenant te connecter.",
-            });
+        return res.status(200).json({
+            success: true,
+            message:
+                "Compte activé avec succès ! Tu peux maintenant te connecter.",
+        });
     } catch (err) {
         return next(err);
     }
