@@ -220,7 +220,7 @@ export const getAccessToCompany = async (req, res, next) => {
         if (age > ageLimit)
             return res.status(410).json({ error: "Lien invalide ou expiré." });
 
-        await companyRepo.consumeInvite(company);
+        //await companyRepo.consumeInvite(company);
 
         const token = jwt.sign(
             { role: "limited", companyId: company._id.toString() },

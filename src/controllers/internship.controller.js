@@ -117,7 +117,7 @@ export const updateInternship = async (req, res, next) => {
 };
 
 export const updateSheet = async (req, res, next) => {
-    const { startDate, endDate, missions, description, companyTutor, companyType, externalCompanyName, externalCompanyWebsite } = req.body;
+    const { startDate, endDate, missions, description, companyTutor, companyType, companyId, externalCompanyName, externalCompanyWebsite } = req.body;
     const user = req.user;
 
     try {
@@ -133,8 +133,15 @@ export const updateSheet = async (req, res, next) => {
             return res.status(400).json({ success: false, error: "Ce stage ne peut plus être modifié" });
         }
 
-        const updated = await internshipRepo.saveSheet(internship, { startDate, endDate, missions, description, companyTutor, companyType, externalCompanyName, externalCompanyWebsite });
-        return res.status(200).json({ success: true, internship: updated });
+        if (companyType === "existing" && companyId) {
+            internship.company = companyId;
+        } else if (companyType === "external") {
+            internship.company = null;
+        }
+
+        const saved = await internshipRepo.saveSheet(internship, { startDate, endDate, missions, description, companyTutor, companyType, externalCompanyName, externalCompanyWebsite });
+        const populated = await internshipRepo.findById(saved._id);
+        return res.status(200).json({ success: true, internship: populated });
     } catch (err) {
         return next(err);
     }
@@ -156,11 +163,12 @@ export const submitSheet = async (req, res, next) => {
             return res.status(400).json({ success: false, error: "La fiche doit être en cours avant de soumettre" });
         }
 
-        const updated = await internshipRepo.submit(internship);
+        const saved = await internshipRepo.submit(internship);
+        const populated = await internshipRepo.findById(saved._id);
 
         dbLog({ action: "INTERNSHIP_SUBMITTED", message: `Fiche soumise pour le stage ${req.params.id}`, userId: user._id, ip: req.ip, meta: { internshipId: req.params.id } });
 
-        return res.status(200).json({ success: true, internship: updated });
+        return res.status(200).json({ success: true, internship: populated });
     } catch (err) {
         return next(err);
     }
