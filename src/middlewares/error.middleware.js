@@ -1,6 +1,11 @@
 import logger from "../utils/logger.js";
 import dbLog from "../utils/dbLogger.js";
 
+/**
+ * Gestionnaire d'erreurs Express centralisé.
+ * Normalise CastError (404), duplicate key (400), ValidationError (400) et erreurs génériques.
+ * Logue les erreurs 5xx dans la DB via dbLog.
+ */
 const errorMiddleware = (err, req, res, next) => {
     let statusCode = err.statusCode || 500;
     let message = err.message || "Erreur serveur";

@@ -1,5 +1,11 @@
 import resend from "../../config/resend.js";
 
+/**
+ * Envoie l'email d'activation de compte via Resend.
+ * @param {string} to - Adresse email du destinataire.
+ * @param {string} token - Token d'activation (32 bytes hex).
+ * @returns {Promise<object>} Données retournées par l'API Resend.
+ */
 export const sendActivationEmail = async (to, token) => {
     const frontUrl = process.env.FRONT_URL || "http://localhost:5173";
     const activationUrl = `${frontUrl}/activate/${token}`;

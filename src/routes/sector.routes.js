@@ -1,3 +1,11 @@
+/**
+ * Routes secteurs — /api/sectors
+ *
+ * GET    /     — Liste publique
+ * POST   /     — Crée (SECTOR_CREATE)
+ * PUT    /:id  — Modifie (SECTOR_UPDATE)
+ * DELETE /:id  — Supprime (SECTOR_DELETE)
+ */
 import express from "express";
 import { getSectors, createSector, updateSector, deleteSector } from "../controllers/sector.controller.js";
 import { authenticate } from "../middlewares/auth.middleware.js";

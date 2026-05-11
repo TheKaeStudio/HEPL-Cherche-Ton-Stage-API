@@ -8,6 +8,11 @@ const parsePage = (query, defaultLimit = 20) => {
     return { page, limit, skip };
 };
 
+/**
+ * GET /api/users
+ * Liste les utilisateurs. Filtrable par ?role=. Supporte la pagination via ?page=&limit=.
+ * @requires USER_READ
+ */
 export const getUsers = async (req, res, next) => {
     try {
         const filter = req.query.role ? { role: req.query.role } : {};
@@ -30,6 +35,12 @@ export const getUsers = async (req, res, next) => {
     }
 };
 
+/**
+ * GET /api/users/:id
+ * Retourne le détail d'un utilisateur.
+ * @requires USER_READ
+ * @param {{ params: { id: string } }} req
+ */
 export const getUser = async (req, res, next) => {
     try {
         const user = await userRepo.findById(req.params.id);
@@ -46,6 +57,12 @@ export const getUser = async (req, res, next) => {
     }
 };
 
+/**
+ * PUT /api/users/update/:id
+ * Modifie un utilisateur. Seul admin peut changer le rôle.
+ * @requires USER_UPDATE
+ * @param {{ params: { id: string }, body: { role?, group?, phone?, photo? } }} req
+ */
 export const updateUser = async (req, res, next) => {
     const { role, group, phone, photo } = req.body;
     const requesterId = req.user._id;
@@ -78,6 +95,10 @@ export const updateUser = async (req, res, next) => {
     }
 };
 
+/**
+ * PUT /api/users/me
+ * Modifie son propre profil. Champs autorisés : photo, phone, firstname, lastname.
+ */
 export const updateMe = async (req, res, next) => {
     const ALLOWED = ["photo", "phone", "firstname", "lastname"];
     const updates = {};
@@ -93,6 +114,12 @@ export const updateMe = async (req, res, next) => {
     }
 };
 
+/**
+ * DELETE /api/users/delete/:id
+ * Supprime un utilisateur.
+ * @requires USER_DELETE
+ * @param {{ params: { id: string } }} req
+ */
 export const deleteUser = async (req, res, next) => {
     try {
         const user = await userRepo.findById(req.params.id);

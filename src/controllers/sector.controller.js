@@ -1,5 +1,9 @@
 import sectorRepo from "../repositories/sector.repository.js";
 
+/**
+ * GET /api/sectors
+ * Retourne tous les secteurs, triés par nom.
+ */
 export const getSectors = async (req, res, next) => {
     try {
         const sectors = await sectorRepo.findAll();
@@ -9,6 +13,12 @@ export const getSectors = async (req, res, next) => {
     }
 };
 
+/**
+ * POST /api/sectors
+ * Crée un secteur.
+ * @requires SECTOR_CREATE
+ * @param {{ body: { name: string, color?: string } }} req
+ */
 export const createSector = async (req, res, next) => {
     const { name, color } = req.body;
     try {
@@ -19,6 +29,12 @@ export const createSector = async (req, res, next) => {
     }
 };
 
+/**
+ * PUT /api/sectors/:id
+ * Modifie un secteur.
+ * @requires SECTOR_UPDATE
+ * @param {{ params: { id: string }, body: { name?: string, color?: string } }} req
+ */
 export const updateSector = async (req, res, next) => {
     const { name, color } = req.body;
     try {
@@ -34,6 +50,12 @@ export const updateSector = async (req, res, next) => {
     }
 };
 
+/**
+ * DELETE /api/sectors/:id
+ * Supprime un secteur.
+ * @requires SECTOR_DELETE
+ * @param {{ params: { id: string } }} req
+ */
 export const deleteSector = async (req, res, next) => {
     try {
         const sector = await sectorRepo.deleteById(req.params.id);

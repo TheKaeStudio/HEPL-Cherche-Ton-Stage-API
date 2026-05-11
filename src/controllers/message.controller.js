@@ -8,6 +8,10 @@ const parsePage = (query, defaultLimit = 20) => {
     return { page, limit, skip };
 };
 
+/**
+ * GET /api/messages
+ * Retourne la boîte de réception de l'utilisateur connecté. Supporte ?page=&limit=.
+ */
 export const getInbox = async (req, res, next) => {
     try {
         if (req.query.page) {
@@ -29,6 +33,11 @@ export const getInbox = async (req, res, next) => {
     }
 };
 
+/**
+ * GET /api/messages/:id
+ * Retourne un message appartenant à l'utilisateur connecté.
+ * @param {{ params: { id: string } }} req
+ */
 export const getMessageById = async (req, res, next) => {
     try {
         const message = await messageRepo.findByIdAndRecipient(req.params.id, req.user._id);
@@ -41,6 +50,11 @@ export const getMessageById = async (req, res, next) => {
     }
 };
 
+/**
+ * POST /api/messages/send
+ * Envoie un message et notifie le destinataire.
+ * @param {{ body: { recipientId: string, subject: string, content: string } }} req
+ */
 export const sendMessage = async (req, res, next) => {
     const { recipientId, subject, content } = req.body;
 
@@ -55,6 +69,11 @@ export const sendMessage = async (req, res, next) => {
     }
 };
 
+/**
+ * PUT /api/messages/:id/read
+ * Marque un message comme lu.
+ * @param {{ params: { id: string } }} req
+ */
 export const markAsRead = async (req, res, next) => {
     try {
         const message = await messageRepo.markAsRead(req.params.id, req.user._id);

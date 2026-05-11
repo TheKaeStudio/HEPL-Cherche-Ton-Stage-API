@@ -1,6 +1,10 @@
 import jwt from "jsonwebtoken";
 import userRepo from "../repositories/user.repository.js";
 
+/**
+ * Autorise l'upload d'image pour les utilisateurs authentifiés et les tokens limités (entreprises).
+ * Attache `req.user` avec les infos disponibles selon le type de token.
+ */
 export const canUploadImage = async (req, res, next) => {
     const authHeader = req.headers.authorization;
     if (!authHeader?.startsWith("Bearer")) {

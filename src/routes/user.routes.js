@@ -1,3 +1,12 @@
+/**
+ * Routes utilisateurs — /api/users
+ *
+ * GET    /              — Liste (USER_READ)
+ * PUT    /me            — Modifie son propre profil
+ * GET    /:id           — Détail (USER_READ)
+ * PUT    /update/:id    — Modifie un utilisateur (USER_UPDATE)
+ * DELETE /delete/:id    — Supprime (USER_DELETE)
+ */
 import express from "express";
 import { getUsers, getUser, updateUser, updateMe, deleteUser } from "../controllers/user.controller.js";
 import { authenticate } from "../middlewares/auth.middleware.js";

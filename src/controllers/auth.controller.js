@@ -6,6 +6,11 @@ import { sendActivationEmail } from "../utils/sendActivationEmail.js";
 import dbLog from "../utils/dbLogger.js";
 import transporter from "../../config/nodemailer.js";
 
+/**
+ * POST /api/auth/sign-up
+ * Crée un compte. Rôle assigné automatiquement selon le domaine email (@hepl.be → teacher, sinon student).
+ * @param {{ body: { lastname: string, firstname: string, email: string, password: string } }} req
+ */
 export const signUp = async (req, res, next) => {
     try {
         const { lastname, firstname, email, password } = req.body;
@@ -51,79 +56,13 @@ export const signUp = async (req, res, next) => {
     }
 };
 
-// export const signUp = async (req, res, next) => {
-//     try {
-//         const { lastname, firstname, email, password } = req.body;
-//         const normalizedEmail = email.toLowerCase();
 
-//         const existingUser = await userRepo.findByEmail(normalizedEmail);
-//         if (existingUser) {
-//             if (
-//                 !existingUser.verified &&
-//                 existingUser.activationTokenExpires < Date.now()
-//             ) {
-//                 await userRepo.deleteById(existingUser._id);
-//             } else if (!existingUser.verified) {
-//                 const err = new Error(
-//                     "Un email de confirmation t'a déjà été envoyé. Vérifie ta boîte mail ou réessaie dans 24h.",
-//                 );
-//                 err.statusCode = 409;
-//                 throw err;
-//             } else {
-//                 const err = new Error("Cette adresse mail est déjà utilisée");
-//                 err.statusCode = 409;
-//                 throw err;
-//             }
-//         }
-
-//         let role = "student";
-//         if (normalizedEmail.endsWith("@hepl.be")) role = "teacher";
-
-//         const salt = await bcrypt.genSalt(10);
-//         const hashedPassword = await bcrypt.hash(password, salt);
-//         const activationToken = crypto.randomBytes(32).toString("hex");
-//         const activationTokenExpires = Date.now() + 24 * 60 * 60 * 1000;
-
-//         const newUser = await userRepo.create({
-//             lastname,
-//             firstname,
-//             email: normalizedEmail,
-//             password: hashedPassword,
-//             role,
-//             verified: false,
-//             activationToken,
-//             activationTokenExpires,
-//         });
-
-//         try {
-//             await transporter.verify();
-//             await sendActivationEmail(normalizedEmail, activationToken);
-//         } catch (emailErr) {
-//             await userRepo.deleteById(newUser._id);
-//             const err = new Error(
-//                 "Impossible d'envoyer l'email de confirmation. Vérifie l'adresse email et réessaie.",
-//             );
-//             err.statusCode = 500;
-//             throw err;
-//         }
-
-//         dbLog({
-//             action: "AUTH_SIGNUP",
-//             message: `Nouvelle inscription: ${normalizedEmail}`,
-//             userId: newUser._id,
-//             ip: req.ip,
-//             meta: { email: normalizedEmail, role },
-//         });
-
-//         return res.status(201).json({
-//             success: true,
-//             message: "Vérifie ta boîte mail pour activer ton compte.",
-//         });
-//     } catch (err) {
-//         return next(err);
-//     }
-// };
-
+/**
+ * POST /api/auth/sign-in
+ * Authentifie un utilisateur et retourne un JWT.
+ * @param {{ body: { email: string, password: string } }} req
+ * @returns {{ token: string, user: object }}
+ */
 export const signIn = async (req, res, next) => {
     try {
         const { email, password } = req.body;
@@ -194,6 +133,11 @@ export const signIn = async (req, res, next) => {
     }
 };
 
+/**
+ * GET /api/auth/activate/:token
+ * Active un compte via le token reçu par email.
+ * @param {{ params: { token: string } }} req
+ */
 export const activateAccount = async (req, res, next) => {
     try {
         const user = await userRepo.findByActivationToken(req.params.token);

@@ -1,5 +1,10 @@
 import logRepo from "../repositories/log.repository.js";
 
+/**
+ * GET /api/logs
+ * Retourne les logs serveur. Filtrable par ?level= et ?action=. Paginé via ?page=&limit=.
+ * @requires LOG_READ
+ */
 export const getLogs = async (req, res, next) => {
     const { level, action, page = 1, limit = 50 } = req.query;
 

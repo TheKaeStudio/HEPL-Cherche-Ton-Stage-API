@@ -1,6 +1,11 @@
 import User from "../models/user.model.js";
 import jwt from "jsonwebtoken";
 
+/**
+ * Vérifie le JWT Bearer dans Authorization header.
+ * Charge l'utilisateur depuis la DB et vérifie que son email est confirmé.
+ * Attache `req.user` sur succès.µ
+ */
 export const authenticate = async (req, res, next) => {
     try {
         let token;

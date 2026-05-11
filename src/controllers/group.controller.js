@@ -1,5 +1,9 @@
 import groupRepo from "../repositories/group.repository.js";
 
+/**
+ * GET /api/groups
+ * Retourne tous les groupes, triés par nom.
+ */
 export const getGroups = async (req, res, next) => {
     try {
         const groups = await groupRepo.findAll();
@@ -9,6 +13,12 @@ export const getGroups = async (req, res, next) => {
     }
 };
 
+/**
+ * POST /api/groups
+ * Crée un groupe.
+ * @requires GROUP_CREATE
+ * @param {{ body: { name: string, color?: string } }} req
+ */
 export const createGroup = async (req, res, next) => {
     const { name, color } = req.body;
     try {
@@ -19,6 +29,12 @@ export const createGroup = async (req, res, next) => {
     }
 };
 
+/**
+ * PUT /api/groups/:id
+ * Modifie un groupe.
+ * @requires GROUP_UPDATE
+ * @param {{ params: { id: string }, body: { name?: string, color?: string } }} req
+ */
 export const updateGroup = async (req, res, next) => {
     const { name, color } = req.body;
     try {
@@ -34,6 +50,12 @@ export const updateGroup = async (req, res, next) => {
     }
 };
 
+/**
+ * DELETE /api/groups/:id
+ * Supprime un groupe.
+ * @requires GROUP_DELETE
+ * @param {{ params: { id: string } }} req
+ */
 export const deleteGroup = async (req, res, next) => {
     try {
         const group = await groupRepo.deleteById(req.params.id);

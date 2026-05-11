@@ -4,6 +4,11 @@ import p from "../../config/permissions.js";
 import userRepo from "../repositories/user.repository.js";
 import logger from "../utils/logger.js";
 
+/**
+ * Autorise la modification d'une entreprise pour deux cas :
+ * 1. Utilisateur authentifié avec permission COMPANY_UPDATE (admin, manager).
+ * 2. Token limité (role=limited) dont le companyId correspond au paramètre :id.
+ */
 export const canUpdateCompany = async (req, res, next) => {
     const companyId = req.params.id;
 

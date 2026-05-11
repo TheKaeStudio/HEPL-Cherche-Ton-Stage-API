@@ -1,3 +1,8 @@
+/**
+ * Routes logs — /api/logs
+ *
+ * GET / — Liste paginée des logs serveur (LOG_READ)
+ */
 import express from "express";
 import { getLogs } from "../controllers/log.controller.js";
 import { authenticate } from "../middlewares/auth.middleware.js";

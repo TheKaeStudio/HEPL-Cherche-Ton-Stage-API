@@ -1,3 +1,11 @@
+/**
+ * Routes groupes — /api/groups
+ *
+ * GET    /     — Liste publique
+ * POST   /     — Crée (GROUP_CREATE)
+ * PUT    /:id  — Modifie (GROUP_UPDATE)
+ * DELETE /:id  — Supprime (GROUP_DELETE)
+ */
 import express from "express";
 import { getGroups, createGroup, updateGroup, deleteGroup } from "../controllers/group.controller.js";
 import { authenticate } from "../middlewares/auth.middleware.js";

@@ -10,6 +10,11 @@ const parsePage = (query, defaultLimit = 20) => {
     return { page, limit, skip };
 };
 
+/**
+ * GET /api/internships
+ * Liste les stages selon le rôle : admin/manager → tous, teacher → les siens, student → les siens.
+ * Supporte la pagination via ?page=&limit=.
+ */
 export const getInternships = async (req, res, next) => {
     const user = req.user;
     let filter = {};
@@ -37,6 +42,11 @@ export const getInternships = async (req, res, next) => {
     }
 };
 
+/**
+ * GET /api/internships/:id
+ * Retourne le détail d'un stage. Vérifie les droits d'accès pour student/teacher.
+ * @param {{ params: { id: string } }} req
+ */
 export const getInternshipById = async (req, res, next) => {
     const user = req.user;
 
@@ -61,6 +71,12 @@ export const getInternshipById = async (req, res, next) => {
     }
 };
 
+/**
+ * POST /api/internships/create
+ * Crée un stage et l'assigne à un ou plusieurs étudiants.
+ * @requires INTERNSHIP_CREATE
+ * @param {{ body: { students: string[], companyId?: string, assignedTeacher?: string, deadline?: string, title?: string, type?: string, group?: string, schoolYear?: string } }} req
+ */
 export const createInternship = async (req, res, next) => {
     const { students, companyId, externalCompanyName, assignedTeacher, deadline, title, type, group, schoolYear } = req.body;
     const studentIds = Array.isArray(students) ? students : [students];
@@ -98,6 +114,12 @@ export const createInternship = async (req, res, next) => {
     }
 };
 
+/**
+ * PUT /api/internships/update/:id
+ * Modifie les métadonnées d'un stage (teacher, deadline, company, title, type…).
+ * @requires INTERNSHIP_UPDATE
+ * @param {{ params: { id: string } }} req
+ */
 export const updateInternship = async (req, res, next) => {
     const { assignedTeacher, deadline, companyId, externalCompanyName, title, type, group, schoolYear } = req.body;
 
@@ -116,6 +138,12 @@ export const updateInternship = async (req, res, next) => {
     }
 };
 
+/**
+ * PUT /api/internships/:id/sheet
+ * Sauvegarde la fiche de stage (brouillon). Accessible uniquement par l'étudiant assigné.
+ * Statut passe à "in_progress".
+ * @param {{ params: { id: string }, body: { startDate?, endDate?, missions?, description?, companyTutor?, companyType?, companyId?, externalCompanyName?, externalCompanyWebsite? } }} req
+ */
 export const updateSheet = async (req, res, next) => {
     const { startDate, endDate, missions, description, companyTutor, companyType, companyId, externalCompanyName, externalCompanyWebsite } = req.body;
     const user = req.user;
@@ -147,6 +175,12 @@ export const updateSheet = async (req, res, next) => {
     }
 };
 
+/**
+ * POST /api/internships/:id/submit
+ * Soumet la fiche de stage. Statut passe à "submitted".
+ * Accessible uniquement par l'étudiant assigné, depuis le statut "in_progress".
+ * @param {{ params: { id: string } }} req
+ */
 export const submitSheet = async (req, res, next) => {
     const user = req.user;
 
@@ -174,6 +208,12 @@ export const submitSheet = async (req, res, next) => {
     }
 };
 
+/**
+ * PUT /api/internships/:id/validate
+ * Valide ou rejette une fiche soumise. Notifie les étudiants.
+ * @requires INTERNSHIP_VALIDATE
+ * @param {{ params: { id: string }, body: { status: "validated"|"rejected", grade?: number, comment?: string } }} req
+ */
 export const validateInternship = async (req, res, next) => {
     const { status, grade, comment } = req.body;
 
@@ -204,6 +244,11 @@ export const validateInternship = async (req, res, next) => {
     }
 };
 
+/**
+ * POST /api/internships/:id/submit-docs
+ * Soumet les documents de stage (convention + rapport PDF). Statut passe à "docs_submitted".
+ * @param {{ params: { id: string }, files: { convention: Express.Multer.File[], report: Express.Multer.File[] } }} req
+ */
 export const submitDocs = async (req, res, next) => {
     const user = req.user;
 
@@ -236,6 +281,12 @@ export const submitDocs = async (req, res, next) => {
     }
 };
 
+/**
+ * PUT /api/internships/:id/confirm-docs
+ * Confirme ou rejette les documents soumis. Notifie les étudiants.
+ * @requires INTERNSHIP_VALIDATE
+ * @param {{ params: { id: string }, body: { status: "completed"|"docs_rejected", comment?: string } }} req
+ */
 export const confirmDocs = async (req, res, next) => {
     const { status, comment } = req.body;
 
@@ -265,6 +316,12 @@ export const confirmDocs = async (req, res, next) => {
     }
 };
 
+/**
+ * DELETE /api/internships/delete/:id
+ * Supprime un stage.
+ * @requires INTERNSHIP_DELETE
+ * @param {{ params: { id: string } }} req
+ */
 export const deleteInternship = async (req, res, next) => {
     try {
         const internship = await internshipRepo.deleteById(req.params.id);

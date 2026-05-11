@@ -7,6 +7,10 @@ const parsePage = (query, defaultLimit = 20) => {
     return { page, limit, skip };
 };
 
+/**
+ * GET /api/notifications
+ * Retourne toutes les notifications de l'utilisateur connecté. Supporte ?page=&limit=.
+ */
 export const getNotifications = async (req, res, next) => {
     try {
         if (req.query.page) {
@@ -28,6 +32,11 @@ export const getNotifications = async (req, res, next) => {
     }
 };
 
+/**
+ * PUT /api/notifications/:id/read
+ * Marque une notification comme lue.
+ * @param {{ params: { id: string } }} req
+ */
 export const markAsRead = async (req, res, next) => {
     try {
         const notification = await notificationRepo.markAsRead(req.params.id, req.user._id);
@@ -40,6 +49,10 @@ export const markAsRead = async (req, res, next) => {
     }
 };
 
+/**
+ * PUT /api/notifications/read-all
+ * Marque toutes les notifications de l'utilisateur comme lues.
+ */
 export const markAllAsRead = async (req, res, next) => {
     try {
         await notificationRepo.markAllAsRead(req.user._id);

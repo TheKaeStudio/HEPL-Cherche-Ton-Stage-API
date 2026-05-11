@@ -1,3 +1,20 @@
+/**
+ * Routes stages — /api/internships
+ *
+ * GET    /                       — Liste selon rôle
+ * GET    /:id                    — Détail
+ * POST   /create                 — Crée (INTERNSHIP_CREATE)
+ * PUT    /update/:id             — Modifie les métadonnées (INTERNSHIP_UPDATE)
+ * PUT    /:id/sheet              — Sauvegarde la fiche (étudiant uniquement)
+ * POST   /:id/submit             — Soumet la fiche (étudiant)
+ * PUT    /:id/validate           — Valide ou rejette (INTERNSHIP_VALIDATE)
+ * DELETE /delete/:id             — Supprime (INTERNSHIP_DELETE)
+ * POST   /:id/submit-docs        — Soumet les documents PDF (étudiant)
+ * PUT    /:id/confirm-docs       — Confirme/rejette les documents (INTERNSHIP_VALIDATE)
+ * GET    /:id/comments           — Lire les commentaires
+ * POST   /:id/comments           — Ajouter un commentaire (COMMENT_CREATE)
+ * DELETE /:id/comments/:commentId — Supprimer un commentaire (COMMENT_DELETE)
+ */
 import express from "express";
 import {
     createInternship,

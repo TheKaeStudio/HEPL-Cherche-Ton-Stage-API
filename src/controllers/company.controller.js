@@ -26,6 +26,10 @@ const formatCompany = (company) => {
     };
 };
 
+/**
+ * GET /api/company
+ * Liste toutes les entreprises. Supporte la pagination via ?page=&limit=.
+ */
 export const getCompanies = async (req, res, next) => {
     try {
         if (req.query.page) {
@@ -47,6 +51,11 @@ export const getCompanies = async (req, res, next) => {
     }
 };
 
+/**
+ * GET /api/company/:id
+ * Retourne le détail d'une entreprise.
+ * @param {{ params: { id: string } }} req
+ */
 export const getCompanyById = async (req, res, next) => {
     try {
         const company = await companyRepo.findById(req.params.id);
@@ -62,6 +71,11 @@ export const getCompanyById = async (req, res, next) => {
     }
 };
 
+/**
+ * POST /api/company/create
+ * Crée une entreprise. Notifie tous les utilisateurs vérifiés.
+ * @requires COMPANY_CREATE
+ */
 export const createCompany = async (req, res, next) => {
     const {
         name,
@@ -119,6 +133,11 @@ export const createCompany = async (req, res, next) => {
     }
 };
 
+/**
+ * PUT /api/company/update/:id
+ * Modifie une entreprise. Accessible par admin/manager ou via token limité (role=limited + companyId).
+ * @param {{ params: { id: string } }} req
+ */
 export const updateCompany = async (req, res, next) => {
     const {
         name,
@@ -178,6 +197,12 @@ export const updateCompany = async (req, res, next) => {
     }
 };
 
+/**
+ * DELETE /api/company/delete/:id
+ * Supprime une entreprise.
+ * @requires COMPANY_DELETE
+ * @param {{ params: { id: string } }} req
+ */
 export const deleteCompany = async (req, res, next) => {
     try {
         const company = await companyRepo.deleteById(req.params.id);
@@ -205,6 +230,13 @@ export const deleteCompany = async (req, res, next) => {
     }
 };
 
+/**
+ * GET /api/company/get-access/:key
+ * Échange une clé d'invitation contre un JWT limité (role=limited, companyId).
+ * Vérifie que la clé n'est pas expirée (INVITE_EXPIRE_DAYS).
+ * @param {{ params: { key: string } }} req
+ * @returns {{ token: string }}
+ */
 export const getAccessToCompany = async (req, res, next) => {
     try {
         const company = await companyRepo.findByInviteKey(req.params.key);
@@ -241,6 +273,13 @@ export const getAccessToCompany = async (req, res, next) => {
     }
 };
 
+/**
+ * POST /api/company/:id/give-access
+ * Génère une clé d'invitation unique pour permettre à l'entreprise de modifier sa fiche.
+ * @requires COMPANY_GIVE_ACCESS
+ * @param {{ params: { id: string } }} req
+ * @returns {{ key: string }}
+ */
 export const giveAccessToCompany = async (req, res, next) => {
     try {
         const key = crypto.randomBytes(20).toString("hex");

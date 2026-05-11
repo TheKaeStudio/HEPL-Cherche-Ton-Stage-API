@@ -1,5 +1,9 @@
 import logger from "../utils/logger.js";
 
+/**
+ * Logue chaque requête HTTP avec méthode, URL, status code et durée.
+ * Niveau de log : info (2xx), warn (4xx), error (5xx).
+ */
 export const requestLogger = (req, res, next) => {
     const start = Date.now();
 

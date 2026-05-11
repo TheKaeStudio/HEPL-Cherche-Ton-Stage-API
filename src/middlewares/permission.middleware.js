@@ -1,6 +1,11 @@
 import { rolePermissions } from "../../config/roles.js";
 import dbLog from "../utils/dbLogger.js";
 
+/**
+ * Vérifie que l'utilisateur connecté possède au moins une des permissions requises.
+ * Doit être appelé après `authenticate`.
+ * @param {...string} requiredPermissions - Constantes de permissions (voir config/permissions.js).
+ */
 export const authorize = (...requiredPermissions) => {
     return (req, res, next) => {
         const role = req.user.role;

@@ -2,6 +2,11 @@ import commentRepo from "../repositories/comment.repository.js";
 import internshipRepo from "../repositories/internship.repository.js";
 import { createNotification } from "../utils/createNotification.js";
 
+/**
+ * GET /api/internships/:id/comments
+ * Retourne les commentaires d'un stage.
+ * @param {{ params: { id: string } }} req
+ */
 export const getComments = async (req, res, next) => {
     try {
         const comments = await commentRepo.findByInternship(req.params.id);
@@ -11,6 +16,12 @@ export const getComments = async (req, res, next) => {
     }
 };
 
+/**
+ * POST /api/internships/:id/comments
+ * Ajoute un commentaire sur un stage. Notifie les étudiants assignés.
+ * @requires COMMENT_CREATE
+ * @param {{ params: { id: string }, body: { content: string } }} req
+ */
 export const addComment = async (req, res, next) => {
     const { content } = req.body;
 
@@ -34,6 +45,12 @@ export const addComment = async (req, res, next) => {
     }
 };
 
+/**
+ * DELETE /api/internships/:id/comments/:commentId
+ * Supprime un commentaire.
+ * @requires COMMENT_DELETE
+ * @param {{ params: { id: string, commentId: string } }} req
+ */
 export const deleteComment = async (req, res, next) => {
     try {
         const comment = await commentRepo.deleteById(req.params.commentId);

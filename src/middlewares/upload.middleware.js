@@ -1,3 +1,9 @@
+/**
+ * Configuration Multer pour les uploads.
+ * - uploadMiddleware : images uniquement, 5 Mo max.
+ * - uploadPdfMiddleware : PDF uniquement, 10 Mo max.
+ * Fichiers sauvegardés dans /uploads/ avec un nom unique (timestamp + hex aléatoire).
+ */
 import multer from "multer";
 import path from "path";
 import { randomBytes } from "crypto";
