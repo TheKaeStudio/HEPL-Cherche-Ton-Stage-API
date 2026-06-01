@@ -52,7 +52,20 @@ app.use((req, res, next) => {
     next();
 });
 
-app.use(cors({ origin: true, credentials: true }));
+app.use((req, res, next) => {
+    console.log("➡️", req.method, req.url);
+    next();
+});
+
+app.use(
+    cors({
+        origin: "https://hepl-cherche-ton-stage.vercel.app",
+        methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],   
+        allowedHeaders: ["Content-Type", "Authorization"],
+    }),
+);
+
+app.options("*", cors());
 
 app.use(express.json());
 app.use(requestLogger);
