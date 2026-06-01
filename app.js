@@ -24,24 +24,26 @@ dns.setDefaultResultOrder("ipv4first");
 
 const app = express();
 
-const ALLOWED_ORIGINS = [
-    "http://localhost:5173",
-    "http://localhost:4173",
-    process.env.FRONT_URL,
-    process.env.FRONTEND_URL,
-].filter(Boolean);
+// const ALLOWED_ORIGINS = [
+//     "http://localhost:5173",
+//     "http://localhost:4173",
+//     process.env.FRONT_URL,
+//     process.env.FRONTEND_URL,
+// ].filter(Boolean);
 
-app.use(
-    cors({
-        origin: (origin, callback) => {
-            if (!origin) return callback(null, true);
-            if (ALLOWED_ORIGINS.includes(origin)) return callback(null, true);
-            if (origin.endsWith(".vercel.app")) return callback(null, true);
-            return callback(null, false);
-        },
-        credentials: true,
-    }),
-);
+// app.use(
+//     cors({
+//         origin: (origin, callback) => {
+//             if (!origin) return callback(null, true);
+//             if (ALLOWED_ORIGINS.includes(origin)) return callback(null, true);
+//             if (origin.endsWith(".vercel.app")) return callback(null, true);
+//             return callback(null, false);
+//         },
+//         credentials: true,
+//     }),
+// );
+
+app.use(cors({ origin: true, credentials: true }));
 
 app.use(express.json());
 app.use(requestLogger);
