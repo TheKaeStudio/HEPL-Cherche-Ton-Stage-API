@@ -16,6 +16,15 @@ const parsePage = (query, defaultLimit = 20) => {
 export const getUsers = async (req, res, next) => {
     try {
         const filter = req.query.role ? { role: req.query.role } : {};
+        const search = req.query.search?.trim();
+        if (search) {
+            const re = { $regex: search, $options: "i" };
+            filter.$or = [
+                { firstname: re },
+                { lastname:  re },
+                { email:     re },
+            ];
+        }
         if (req.query.page) {
             const { page, limit, skip } = parsePage(req.query);
             const { users, total }      = await userRepo.findPaginated(filter, skip, limit);

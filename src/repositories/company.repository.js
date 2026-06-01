@@ -1,20 +1,39 @@
 import Company from "../models/company.model.js";
 
+/**
+ * @param {string} [search]
+ * @returns {object} MongoDB filter
+ */
+const buildFilter = (search) =>
+    search ? { name: { $regex: search, $options: "i" } } : {};
+
 /** Retourne toutes les entreprises avec leur secteur, triées par date décroissante. */
-const findAll = () => Company.find().populate("sector", "name color").sort({ createdAt: -1 });
+const findAll = (search) =>
+    Company.find(buildFilter(search)).populate("sector", "name color").sort({ createdAt: -1 });
 
 /**
  * Retourne une page d'entreprises.
- * @param {number} skip - Nombre de documents à sauter.
- * @param {number} limit - Nombre de documents à retourner.
+ * @param {number} skip
+ * @param {number} limit
+ * @param {string} [search]
  * @returns {Promise<{ companies: Company[], total: number }>}
  */
-const findPaginated = async (skip, limit) => {
+const findPaginated = async (skip, limit, search) => {
+    const filter = buildFilter(search);
     const [companies, total] = await Promise.all([
-        Company.find().populate("sector", "name color").sort({ createdAt: -1 }).skip(skip).limit(limit),
-        Company.countDocuments(),
+        Company.find(filter).populate("sector", "name color").sort({ createdAt: -1 }).skip(skip).limit(limit),
+        Company.countDocuments(filter),
     ]);
     return { companies, total };
+};
+
+/** Retourne les valeurs distinctes de domains et tags. */
+const findMeta = async () => {
+    const [domains, tags] = await Promise.all([
+        Company.distinct("domains"),
+        Company.distinct("tags"),
+    ]);
+    return { domains: domains.filter(Boolean).sort(), tags: tags.filter(Boolean).sort() };
 };
 
 /**
@@ -95,6 +114,7 @@ const consumeInvite = (company) => {
 export default {
     findAll,
     findPaginated,
+    findMeta,
     findById,
     findByInviteKey,
     create,

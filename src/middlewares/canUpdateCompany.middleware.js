@@ -37,6 +37,7 @@ export const canUpdateCompany = async (req, res, next) => {
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
         if (decoded.role === "limited" && decoded.companyId === companyId) {
+            req.user = { role: "limited", companyId: decoded.companyId };
             return next();
         }
 

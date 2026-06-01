@@ -15,17 +15,10 @@ import logRouter from "./src/routes/log.routes.js";
 import uploadRouter from "./src/routes/upload.routes.js";
 import groupRouter from "./src/routes/group.routes.js";
 import sectorRouter from "./src/routes/sector.routes.js";
+import companyFieldRouter from "./src/routes/companyField.routes.js";
 
 import errorMiddleware from "./src/middlewares/error.middleware.js";
 import { requestLogger } from "./src/middlewares/requestLogger.middleware.js";
-import { sendActivationEmail } from "./src/utils/sendActivationEmail.js";
-import { Resend } from "resend";
-
-const resend = new Resend(process.env.RESEND_API_KEY);
-
-sendActivationEmail("dradarkx@gmail.com", "Oui").catch((err) =>
-    console.error("EMAIL FAIL:", err),
-);
 
 dns.setDefaultResultOrder("ipv4first");
 
@@ -62,6 +55,7 @@ app.use("/api/logs", logRouter);
 app.use("/api/upload", uploadRouter);
 app.use("/api/groups", groupRouter);
 app.use("/api/sectors", sectorRouter);
+app.use("/api/company-fields", companyFieldRouter);
 
 app.get("/api/health", (req, res) => {
     res.json({ status: "ok" });

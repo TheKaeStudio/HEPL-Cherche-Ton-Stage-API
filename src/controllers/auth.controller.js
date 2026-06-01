@@ -4,7 +4,6 @@ import jwt from "jsonwebtoken";
 import userRepo from "../repositories/user.repository.js";
 import { sendActivationEmail } from "../utils/sendActivationEmail.js";
 import dbLog from "../utils/dbLogger.js";
-import transporter from "../../config/nodemailer.js";
 
 /**
  * POST /api/auth/sign-up
@@ -29,6 +28,9 @@ export const signUp = async (req, res, next) => {
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(password, salt);
 
+        // const activationToken = crypto.randomBytes(32).toString("hex");
+        // const activationTokenExpires = new Date(Date.now() + 24 * 60 * 60 * 1000);
+
         const newUser = await userRepo.create({
             lastname,
             firstname,
@@ -36,20 +38,23 @@ export const signUp = async (req, res, next) => {
             password: hashedPassword,
             role,
             verified: true,
+            // activationToken,
+            // activationTokenExpires,
         });
+
+        // await sendActivationEmail(normalizedEmail, activationToken);
 
         dbLog({
             action: "AUTH_SIGNUP",
             message: `Nouvelle inscription: ${normalizedEmail}`,
             userId: newUser._id,
             ip: req.ip,
-            meta: { email: normalizedEmail, role, noEmail: true },
+            meta: { email: normalizedEmail, role },
         });
 
         return res.status(201).json({
             success: true,
-            message: "Compte créé avec succès.",
-            user: newUser,
+            message: "Compte créé. Vérifie ta boîte mail pour activer ton compte.",
         });
     } catch (err) {
         return next(err);
@@ -111,7 +116,7 @@ export const signIn = async (req, res, next) => {
             });
         }
 
-        const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, {
+        const token = jwt.sign({ userId: user._id, role: user.role }, process.env.JWT_SECRET, {
             expiresIn: process.env.JWT_EXPIRES_IN,
         });
 

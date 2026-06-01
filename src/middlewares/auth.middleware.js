@@ -6,6 +6,23 @@ import jwt from "jsonwebtoken";
  * Charge l'utilisateur depuis la DB et vérifie que son email est confirmé.
  * Attache `req.user` sur succès.µ
  */
+/**
+ * Lit le JWT si présent, l'attache à req.user. Ne bloque jamais.
+ * Utilisé sur les routes publiques qui servent du contenu conditionnel selon le rôle.
+ */
+export const optionalAuthenticate = (req, res, next) => {
+    const header = req.headers.authorization;
+    req.user = null;
+    if (!header?.startsWith("Bearer ")) return next();
+    try {
+        const token = header.split(" ")[1];
+        req.user = jwt.verify(token, process.env.JWT_SECRET);
+    } catch {
+        // token invalide ignoré
+    }
+    return next();
+};
+
 export const authenticate = async (req, res, next) => {
     try {
         let token;

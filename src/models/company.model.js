@@ -16,6 +16,8 @@ const companySchema = new Schema(
             ref: "Sector",
             default: null,
         },
+        domains: [{ type: String, trim: true }],
+        tags:    [{ type: String, trim: true }],
         size: {
             type: String,
             enum: ["TPE", "PME", "ETI", "GE"],
@@ -31,18 +33,23 @@ const companySchema = new Schema(
         },
         website: { type: String, trim: true },
         phone: { type: String, trim: true },
+        customValues: { type: Map, of: Boolean, default: {} },
         contact: {
             name: String,
             email: String,
             phone: String,
+            visibility: { type: String, enum: ["public", "private"], default: "public" },
         },
         contacts: [
             {
                 name: String,
                 email: String,
                 phone: String,
+                visibility: { type: String, enum: ["public", "private"], default: "public" },
             },
         ],
+        teacherInfo:  { type: String },
+        teacherNotes: { type: String },
         invite: {
             key: String,
             createdAt: Date,

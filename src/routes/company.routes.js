@@ -16,18 +16,20 @@ import {
     getAccessToCompany,
     getCompanies,
     getCompanyById,
+    getCompanyMeta,
     giveAccessToCompany,
     updateCompany,
 } from "../controllers/company.controller.js";
-import { authenticate } from "../middlewares/auth.middleware.js";
+import { authenticate, optionalAuthenticate } from "../middlewares/auth.middleware.js";
 import p from "../../config/permissions.js";
 import { canUpdateCompany } from "../middlewares/canUpdateCompany.middleware.js";
 import { authorize } from "../middlewares/permission.middleware.js";
 
 const companyRouter = express.Router();
 
-companyRouter.get("/", getCompanies);
-companyRouter.get("/:id", getCompanyById);
+companyRouter.get("/", optionalAuthenticate, getCompanies);
+companyRouter.get("/meta", getCompanyMeta);
+companyRouter.get("/:id", optionalAuthenticate, getCompanyById);
 companyRouter.post("/create", authenticate, authorize(p.COMPANY_CREATE), createCompany);
 companyRouter.put("/update/:id", canUpdateCompany, updateCompany);
 companyRouter.delete("/delete/:id", authenticate, authorize(p.COMPANY_DELETE), deleteCompany);

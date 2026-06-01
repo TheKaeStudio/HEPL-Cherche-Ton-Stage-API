@@ -12,40 +12,75 @@ import userRepo from "../repositories/user.repository.js";
 import { createNotification } from "../utils/createNotification.js";
 import dbLog from "../utils/dbLogger.js";
 
-const formatCompany = (company) => {
-    const contacts = company.contacts?.length
+const isEducator = (user) => ["teacher", "manager", "admin"].includes(user?.role);
+const isLimitedFor = (user, companyId) =>
+    user?.role === "limited" && user?.companyId === companyId?.toString();
+
+const formatCompany = (company, user = null) => {
+    const educator   = isEducator(user);
+    const limitedOwn = isLimitedFor(user, company._id);
+    const canSeePrivateContacts = educator || limitedOwn;
+    const canSeeTeacherInfo     = educator || limitedOwn;
+    const canSeeTeacherNotes    = educator;
+
+    let contacts = company.contacts?.length
         ? company.contacts
         : company.contact
           ? [company.contact]
           : [];
 
-    return {
-        ...company.toObject(),
-        contacts: contacts,
+    if (!canSeePrivateContacts) {
+        contacts = contacts.filter((c) => c.visibility !== "private");
+    }
+
+    const obj = company.toObject();
+    const result = {
+        ...obj,
+        contacts,
         contact: contacts[0] ?? undefined,
+        customValues: obj.customValues ? Object.fromEntries(obj.customValues) : {},
     };
+
+    if (!canSeeTeacherInfo)  delete result.teacherInfo;
+    if (!canSeeTeacherNotes) delete result.teacherNotes;
+
+    return result;
 };
 
 /**
  * GET /api/company
- * Liste toutes les entreprises. Supporte la pagination via ?page=&limit=.
+ * Liste toutes les entreprises. Supporte la pagination via ?page=&limit= et la recherche via ?search=.
  */
 export const getCompanies = async (req, res, next) => {
     try {
+        const search = req.query.search?.trim() || undefined;
         if (req.query.page) {
             const { page, limit, skip } = parsePage(req.query);
-            const { companies, total }  = await companyRepo.findPaginated(skip, limit);
+            const { companies, total }  = await companyRepo.findPaginated(skip, limit, search);
             return res.status(200).json({
                 success: true,
-                companies: companies.map(formatCompany),
+                companies: companies.map((c) => formatCompany(c, req.user)),
                 total,
                 hasMore: skip + companies.length < total,
                 page,
                 limit,
             });
         }
-        const companies = await companyRepo.findAll();
-        return res.status(200).json({ success: true, companies: companies.map(formatCompany) });
+        const companies = await companyRepo.findAll(search);
+        return res.status(200).json({ success: true, companies: companies.map((c) => formatCompany(c, req.user)) });
+    } catch (err) {
+        return next(err);
+    }
+};
+
+/**
+ * GET /api/company/meta
+ * Retourne les valeurs distinctes de domains et tags pour l'autocomplétion.
+ */
+export const getCompanyMeta = async (req, res, next) => {
+    try {
+        const meta = await companyRepo.findMeta();
+        return res.status(200).json({ success: true, ...meta });
     } catch (err) {
         return next(err);
     }
@@ -65,7 +100,7 @@ export const getCompanyById = async (req, res, next) => {
                 error: "Cette entreprise n'existe pas...",
             });
         }
-        return res.status(200).json({ success: true, company });
+        return res.status(200).json({ success: true, company: formatCompany(company, req.user) });
     } catch (err) {
         return next(err);
     }
@@ -82,14 +117,17 @@ export const createCompany = async (req, res, next) => {
         description,
         logo,
         sector,
+        domains,
+        tags,
+        customValues,
         size,
-        offresObservation,
-        offres3e,
         address,
         website,
         phone,
         contacts,
         contact,
+        teacherInfo,
+        teacherNotes,
     } = req.body;
 
     try {
@@ -104,14 +142,17 @@ export const createCompany = async (req, res, next) => {
             description,
             logo,
             sector,
+            domains: Array.isArray(domains) ? domains.filter(Boolean) : [],
+            tags:    Array.isArray(tags)    ? tags.filter(Boolean)    : [],
+            customValues: customValues && typeof customValues === "object" ? customValues : {},
             size,
-            offresObservation,
-            offres3e,
             address,
             website,
             phone,
             contacts: contactList,
             contact: contactList[0] ?? undefined,
+            teacherInfo:  teacherInfo  || undefined,
+            teacherNotes: teacherNotes || undefined,
         });
 
         const users = await userRepo.findVerifiedIds();
@@ -144,15 +185,20 @@ export const updateCompany = async (req, res, next) => {
         description,
         logo,
         sector,
+        domains,
+        tags,
+        customValues,
         size,
-        offresObservation,
-        offres3e,
         address,
         website,
         phone,
         contacts,
         contact,
+        teacherInfo,
+        teacherNotes,
     } = req.body;
+
+    const isLimited = req.user?.role === "limited";
 
     try {
         const contactList = contacts?.length
@@ -166,14 +212,17 @@ export const updateCompany = async (req, res, next) => {
             description,
             logo,
             sector,
+            domains: Array.isArray(domains) ? domains.filter(Boolean) : [],
+            tags:    Array.isArray(tags)    ? tags.filter(Boolean)    : [],
+            customValues: customValues && typeof customValues === "object" ? customValues : {},
             size,
-            offresObservation,
-            offres3e,
             address,
             website,
             phone,
             contacts: contactList,
             contact: contactList[0] ?? undefined,
+            teacherInfo:  teacherInfo  || undefined,
+            ...(isLimited ? {} : { teacherNotes: teacherNotes || undefined }),
         });
 
         if (!company) {
