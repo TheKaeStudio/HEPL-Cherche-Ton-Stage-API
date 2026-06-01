@@ -27,6 +27,7 @@ const app = express();
 const ALLOWED_ORIGINS = [
     "http://localhost:5173",
     "http://localhost:4173",
+    process.env.FRONT_URL,
     process.env.FRONTEND_URL,
 ].filter(Boolean);
 
