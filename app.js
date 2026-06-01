@@ -82,6 +82,8 @@ const startServer = async () => {
 
         app.listen(PORT, () => {
             console.log(`Server launched on port ${PORT}`);
+            console.log(`NODE_ENV=${process.env.NODE_ENV}`);
+            console.log(`ALLOWED_ORIGINS=${JSON.stringify(ALLOWED_ORIGINS)}`);
         });
     } catch (err) {
         console.error(err);
